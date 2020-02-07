@@ -33,7 +33,6 @@ class Config:
 
         self.seed = cfg['seed']
         self.fr_num = cfg['fr_num']
-        self.v_net = cfg.get('v_net', 'lstm')
         self.v_net_param = cfg.get('v_net_param', None)
         self.v_hdim = cfg['v_hdim']
         self.mlp_dim = cfg['mlp_dim']
@@ -53,7 +52,6 @@ class Config:
         self.bi_dir = cfg.get('bi_dir', True)
         self.augment = cfg.get('augment', False)
         self.batch_size = cfg.get('batch_size')
-        
-
+    
         self.w_d = cfg.get('w_d', 1.0)
 

@@ -9,3 +9,5 @@ num_epoch: 500
 shuffle: true
 save_model_interval: 100
 fr_margin: 5
+
+w_d: 1.e-3

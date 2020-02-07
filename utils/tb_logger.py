@@ -36,10 +36,11 @@ class Logger(object):
         else:
             self.writer = tf.summary.FileWriter(log_dir)
 
-    def scalar_summary(self, tag, value, step):
+    def scalar_summary(self, tags, values, step):
         """Log a scalar variable."""
-        summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=value)])
-        self.writer.add_summary(summary, step)
+        for tag, value in zip(tags, values):
+            summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=value)])
+            self.writer.add_summary(summary, step)
 
     def image_summary(self, tag, images, step):
         """Log a list of images."""
