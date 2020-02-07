@@ -17,16 +17,14 @@ from switching.utils.DSNet_config import Config
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--cfg', default=None)
+parser.add_argument('--cfg', default='model_01')
 parser.add_argument('--mode', default='train')
 parser.add_argument('--data', default=None)
 parser.add_argument('--gpu-index', type=int, default=0)
 parser.add_argument('--iter', type=int, default=0)
 args = parser.parse_args()
-if args.data is None:
-    args.data = args.mode if args.mode in {'train', 'test'} else 'train'
 
-cfg = Config(args.action, args.cfg, create_dirs=(args.iter == 0))
+cfg = Config(args.cfg, create_dirs=(args.iter == 0))
 
 """setup"""
 dtype = torch.float64
@@ -39,6 +37,7 @@ torch.manual_seed(cfg.seed)
 tb_logger = Logger(cfg.tb_dir)
 logger = create_logger(os.path.join(cfg.log_dir, 'log.txt'))
 
+"""Dataset"""
 tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
 val_dataset = Dataset(cfg, 'val', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
 
@@ -74,7 +73,7 @@ def run_epoch(dataset, mode='train'):
     img: (B, Cam, S, H, W, Channel)
     labels: (B, Cam, S)
     """
-    for imgs_np, labels_np in tr_dataset:
+    for imgs_np, labels_np in dataset:
         num = imgs_np.shape[2] - 2 * fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         labels = tensor(labels_np, dtype=dtype, device=device)
@@ -120,7 +119,7 @@ if args.mode == 'train':
         tr_loss, tr_cat_loss, tr_sw_loss = run_epoch(tr_dataset, 'train')
         tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [tr_loss, tr_cat_loss, tr_sw_loss], i_epoch)
 
-        val_loss, val_cat_loss, val_sw_loss = run_epoch(tr_dataset, 'val')
+        val_loss, val_cat_loss, val_sw_loss = run_epoch(val_dataset, 'val')
         tb_logger.scalar_summary(['val_loss', 'val_ce_loss', 'val_switch_loss'], [val_loss, val_cat_loss, val_sw_loss], i_epoch)
 
 

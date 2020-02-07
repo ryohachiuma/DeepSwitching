@@ -5,7 +5,7 @@ from utils import recreate_dirs
 
 class Config:
 
-    def __init__(self, action, cfg_id, create_dirs=False):
+    def __init__(self, cfg_id, create_dirs=False):
         self.id = cfg_id
         cfg_name = 'config/%s.yml' % cfg_id
         if not os.path.exists(cfg_name):
