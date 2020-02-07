@@ -1,16 +1,11 @@
 meta_id: meta_subject_01
 seed: 1
-fr_num: 80
+fr_num: 30
 v_hdim: 128
-mlp_dim: [300, 200]
+mlp_dim: [128, 64]
 cnn_fdim: 128
 lr: 1.e-4
 num_epoch: 500
-iter_method: iter
 shuffle: true
-save_model_interval: 20
+save_model_interval: 100
 fr_margin: 5
-
-# misc
-humanoid_model: humanoid_1205_chair
-vis_model:  humanoid_1205_vis_single_chair

@@ -27,11 +27,14 @@ class Dataset:
         self.label_folder = os.path.join(self.base_folder, 'labels')
 
         # get take names
+        
         if mode == 'train' or mode == 'val':
             self.takes = self.cfg.takes['train']
             self.seq_len = self.cfg.seq_len['train']
         else:
             self.takes = self.cfg.takes[mode]
+            self.seq_len = self.cfg.seq_len[mode]
+
         # iterator specific
         self.sample_count = None
         self.take_indices = None

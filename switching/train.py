@@ -39,8 +39,8 @@ torch.manual_seed(cfg.seed)
 tb_logger = Logger(cfg.tb_dir)
 logger = create_logger(os.path.join(cfg.log_dir, 'log.txt'))
 
-dataset = Dataset(cfg, args.mode, cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
-
+tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
+val_dataset = Dataset(cfg, 'val', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
 """networks"""
 dsnet = DSNet(2, cfg.v_hdim, cfg.cnn_fdim, \
                         mlp_dim=cfg.mlp_dim, v_net_param=cfg.v_net_param, \
@@ -75,7 +75,7 @@ if args.mode == 'train':
         img: (B, Cam, S, H, W, Channel)
         labels: (B, Cam, S)
         """
-        for imgs_np, labels_np in dataset:
+        for imgs_np, labels_np in tr_dataset:
             num = imgs_np.shape[2] - 2 * fr_margin
             imgs = tensor(imgs_np, dtype=dtype, device=device)
             labels = tensor(labels_np, dtype=dtype, device=device)
@@ -87,7 +87,7 @@ if args.mode == 'train':
             """Compute loss"""
             """1. Categorical Loss"""
             """TODO: Change from cross entropy to focal loss"""
-            cat_loss = ce_loss(prob_pred.view(-1, 2), labels.view(-1,))
+            cat_loss = ce_loss(prob_pred.view(-1, 2), labels.view(-1, 1))
 
             """2. Switching loss: if the selected camera is different from the next selection, 
             penalize that."""
