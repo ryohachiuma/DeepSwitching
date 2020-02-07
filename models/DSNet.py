@@ -65,13 +65,13 @@ class DSNet(nn.Module):
         #batch, cameraNum, framenum
         select_prob = probs[:, :, :, 1] # 0: not selected, 1: selected
         #batch x self.frame_num, cameraNum
-        select_prob = select_prob.contiguous().permute(0, 2, 1).contiguous().view(-1, self.camera_num)
+        select_prob = select_prob.permute(0, 2, 1).contiguous().view(-1, self.camera_num)
         #batch x self.frame_num
         max_indices = self.soft_argmax(select_prob)
         #batch, self.frame_num
         max_indices = max_indices.view(-1, self.frame_num)
 
-        return probs, max_indices
+        return torch.log(probs), max_indices
 
 
 if __name__ == '__main__':

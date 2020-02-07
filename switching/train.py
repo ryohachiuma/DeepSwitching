@@ -39,7 +39,7 @@ torch.manual_seed(cfg.seed)
 tb_logger = Logger(cfg.tb_dir)
 logger = create_logger(os.path.join(cfg.log_dir, 'log.txt'))
 
-dataset = Dataset(cfg, cfg.meta_id, args.data, cfg.fr_num, cfg.iter_method, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
+dataset = Dataset(cfg, args.mode, cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
 
 """networks"""
 dsnet = DSNet(2, cfg.v_hdim, cfg.cnn_fdim, \
@@ -55,7 +55,7 @@ if args.iter > 0:
 
 dsnet.to(device)
 
-ce_loss = nn.CrossEntropyLoss()
+ce_loss = nn.NLLoss()
 
 if cfg.optimizer == 'Adam':
     optimizer = torch.optim.Adam(dsnet.parameters(), lr=cfg.lr, weight_decay=cfg.weightdecay)
@@ -71,8 +71,9 @@ if args.mode == 'train':
         t0 = time.time()
         epoch_num_sample = 0
         epoch_loss = 0
-        """img: (B, Cam, S, H, W, Channel)
-           labels: (B, S, Cam)
+        """
+        img: (B, Cam, S, H, W, Channel)
+        labels: (B, Cam, S)
         """
         for imgs_np, labels_np in dataset:
             num = imgs_np.shape[2] - 2 * fr_margin

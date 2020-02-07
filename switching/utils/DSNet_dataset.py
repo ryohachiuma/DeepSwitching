@@ -8,67 +8,30 @@ import cv2
 
 class Dataset:
 
-    def __init__(self, cfg, mode, fr_num, iter_method='iter', shuffle=False, overlap=0, num_sample=20000):
+    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, frame_size = (224, 244, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000):
         self.cfg = cfg
-        self.meta_id = meta_id
         self.mode = mode
         self.fr_num = fr_num
-        self.iter_method = iter_method
         self.shuffle = shuffle
         self.overlap = overlap
         self.num_sample = num_sample
-        self.base_folder = './datasets'
+        
+        self.camera_num = camera_num
+        self.batch_size = batch_size
+        self.split_ratio = split_ratio
 
-        self.image_folder = os.path.join(self.base_folder, 'images')
+        self.frame_size = frame_size
+
+        self.base_folder = './datasets'
+        self.image_folder = os.path.join(self.base_folder, 'frames')
         self.label_folder = os.path.join(self.base_folder, 'labels')
 
-        self.of_folder = os.path.join(self.base_folder, 'fpv_of')
-        self.traj_folder = os.path.join(self.base_folder, 'traj')
-        self.no_traj = self.meta.get('no_traj', False)
-        self.msync = self.meta['video_mocap_sync']
-        self.dt = 1 / self.meta['capture']['fps']
-        self.obj_num = len(self.cfg.object)
-        self.off_obj_pos = self.obj_num * 7
-        self.off_obj_vel = self.obj_num * 6
-        self.pose_only = cfg.pose_only
         # get take names
-        if mode == 'all':
-            self.takes = self.cfg.takes['train'] + self.cfg.takes['test']
+        if mode == 'train' or mode == 'val':
+            self.takes = self.cfg.takes['train']
+            self.seq_len = self.cfg.seq_len['train']
         else:
             self.takes = self.cfg.takes[mode]
-        # get dataset len
-        self.len = np.sum([self.msync[x][2] - self.msync[x][1] for x in self.takes])
-        # preload trajectories
-        if self.no_traj:
-            self.trajs = None
-            self.orig_trajs = None
-            self.norm_trajs = None
-        else:
-            self.trajs = []
-            self.orig_trajs = []
-            for i, take in enumerate(self.takes):
-                traj_file = '%s/%s_traj.p' % (self.traj_folder, take)
-                orig_traj = pickle.load(open(traj_file, 'rb'))
-                # remove noisy hand pose
-                orig_traj[:, 32 + self.off_obj_pos:35 + self.off_obj_pos] = 0.0
-                orig_traj[:, 42 + self.off_obj_pos:45 + self.off_obj_pos] = 0.0
-
-                traj_pos = self.get_traj_pos(orig_traj[:, self.off_obj_pos:]) #ignore chair pos
-                traj_vel = self.get_traj_vel(orig_traj[:, self.off_obj_pos:]) #ignore chair vel
-                if self.pose_only:
-                    traj = orig_traj[:, self.off_obj_pos+7:].copy() # ignore root position/orientation
-                else:
-                    traj = np.hstack((traj_pos, traj_vel))
-                self.trajs.append(traj)
-                self.orig_trajs.append(orig_traj)
-            if mode == 'train':
-                all_traj = np.vstack(self.trajs)
-                self.mean = np.mean(all_traj, axis=0)
-                self.std = np.std(all_traj, axis=0)
-                self.norm_trajs = self.normalize_traj()
-            else:
-                self.mean, self.std, self.norm_trajs = None, None, None
-            self.traj_dim = self.trajs[0].shape[1]
         # iterator specific
         self.sample_count = None
         self.take_indices = None
@@ -79,117 +42,73 @@ class Dataset:
         self.fr_ub = None
         self.im_offset = None
 
-    def __iter__(self):
-        if self.iter_method == 'sample':
-            self.sample_count = 0
-        elif self.iter_method == 'iter':
-            self.cur_ind = -1
-            self.take_indices = np.arange(len(self.takes))
-            if self.shuffle:
-                np.random.shuffle(self.take_indices)
-            self.__next_take()
+        self.labels = []
+        self.load_labels()
+
+    def load_labels(self):
+        for take in self.takes:
+            label_file = os.path.join(self.label_folder, take + '.csv')
+            label = np.loadtxt(label_file, dtype=int, delimiter=',')[:, 1] # only load ground truth
+            self.labels.append(label)
+
+
+    def __iter__(self):    
+        self.sample_count = 0
         return self
 
-    def __next_take(self):
-        self.cur_ind = self.cur_ind + 1
-        if self.cur_ind < len(self.take_indices):
-            self.cur_tid = self.take_indices[self.cur_ind]
-            self.im_offset, self.fr_lb, self.fr_ub = self.msync[self.takes[self.cur_tid]]
-            self.cur_fr = self.fr_lb
-
     def __next__(self):
-        if self.iter_method == 'sample':
-            if self.sample_count >= self.num_sample:
-                raise StopIteration
+        if self.sample_count >= self.num_sample:
+            raise StopIteration
+        labels = []
+        imgs = []
+        for _ in range(self.batch_size):
             self.sample_count += self.fr_num - self.overlap
-            return self.sample()
-        elif self.iter_method == 'iter':
-            if self.cur_ind >= len(self.takes):
-                raise StopIteration
-            fr_start = self.cur_fr
-            fr_end = self.cur_fr + self.fr_num if self.cur_fr + self.fr_num + 30 < self.fr_ub else self.fr_ub
-            of = self.load_of(self.cur_tid, fr_start + self.im_offset, fr_end + self.im_offset)
-            if self.no_traj:
-                norm_traj, orig_traj = None, None
-            else:
-                norm_traj = self.norm_trajs[self.cur_tid][fr_start: fr_end]
-                orig_traj = self.orig_trajs[self.cur_tid][fr_start: fr_end]
-            self.cur_fr = fr_end - self.overlap
-            if fr_end == self.fr_ub:
-                self.__next_take()
-            return of, norm_traj, orig_traj
-
-    def get_traj_pos(self, orig_traj):
-        traj_pos = orig_traj[:, 2:].copy()
-        for i in range(traj_pos.shape[0]):
-            traj_pos[i, 1:5] = de_heading(traj_pos[i, 1:5])
-        return traj_pos
-
-    def get_traj_vel(self, orig_traj):
-        traj_vel = []
-        for i in range(orig_traj.shape[0] - 1):
-            vel = get_qvel_fd(orig_traj[i, :], orig_traj[i + 1, :], self.dt, 'heading')
-            traj_vel.append(vel)
-        traj_vel.append(traj_vel[-1].copy())
-        traj_vel = np.vstack(traj_vel)
-        return traj_vel
-
-    def set_mean_std(self, mean, std):
-        self.mean, self.std = mean, std
-        if not self.no_traj:
-            self.norm_trajs = self.normalize_traj()
-
-    def normalize_traj(self):
-        norm_trajs = []
-        for traj in self.trajs:
-            norm_traj = (traj - self.mean[None, :]) / (self.std[None, :] + 1e-8)
-            norm_trajs.append(norm_traj)
-        return norm_trajs
-
-    def sample(self):
-        take_ind = np.random.randint(len(self.takes))
-        im_offset, fr_lb, fr_ub = self.msync[self.takes[take_ind]]
-        fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
-        fr_end = fr_start + self.fr_num
-        of = self.load_of(take_ind, fr_start + im_offset, fr_end + im_offset)
-        if self.no_traj:
-            norm_traj, orig_traj = None, None
-        else:
-            norm_traj = self.norm_trajs[take_ind][fr_start: fr_end]
-            orig_traj = self.orig_trajs[take_ind][fr_start: fr_end]
-        return of, norm_traj, orig_traj
-
-    def load_of(self, take_ind, start, end):
-        take_folder = '%s/%s' % (self.of_folder, self.takes[take_ind])
-        of = []
-        for i in range(start, end):
-            of_file = '%s/%05d.npy' % (take_folder, i)
-            of_i = np.load(of_file)
-            if self.cfg.augment and self.mode == 'train':
-                of_i = self.augment_flow(of_i)
-            of.append(of_i)
-        of = np.stack(of)
-        return of
-
-
-    def random_crop(self, image, crop_size=(224, 224)):
-        h, w, _ = image.shape
-        top = np.random.randint(0, h - crop_size[0])
-        left = np.random.randint(0, w - crop_size[1])
-        bottom = top + crop_size[0]
-        right = left + crop_size[1]
-        image = image[top:bottom, left:right, :]
-        return image
-
-    def augment_flow(self, flow):
-        from scipy.ndimage.interpolation import rotate
-        """Random scaling/cropping"""
-        scale_size = np.random.randint(*(230, 384))
-        flow = cv2.resize(flow, (scale_size, scale_size))
-        flow = self.random_crop(flow)
-
-        """Random gaussian noise"""
-        flow += np.random.normal(loc=0.0, scale=1.0, size=flow.shape).reshape(flow.shape)
-
-        return flow
+            take_ind = np.random.randint(len(self.takes))
+            seq_len = self.seq_len[take_ind]
         
+            if self.mode == 'train':
+                fr_lb = 0
+                fr_ub = int(seq_len * self.split_ratio)
+                fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
+                fr_end = fr_start + self.fr_num
+
+            elif self.mode == 'val':
+                fr_lb = int(seq_len * self.split_ratio)
+                fr_ub = seq_len
+                fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
+                fr_end = fr_start + self.fr_num                
+
+            img = self.load_imgs(take_ind, fr_start, fr_end)
+            label = self.convert_label(take_ind, fr_start, fr_end)
+            imgs.append(img)
+            labels.append(label)
+
+        
+        return np.asarray(imgs), np.asarray(labels)
+
+    def convert_label(self, take_ind, start, end):
+        label = self.labels[take_ind][start:end]
+        res_label = []
+        for l in label:
+            one_hot_label = np.zeros(self.camera_num)
+            for c in range(self.camera_num):
+                if l == c:
+                    one_hot_label[c] = 1
+            res_label.append(label)
+        res_label = np.asarray(res_label)
+        res_label = np.transpose(res_label)
+        return np.asarray(res_label)
+
+    def load_imgs(self, take_ind, start, end):
+        take_folder = '%s/%s' % (self.image_folder, self.takes[take_ind])
+        imgs_all = []
+        for cam in range(self.camera_num):
+            imgs = []
+            for i in range(start, end):
+                img_file = os.path.join(take_folder, str(cam), '%06d.npz' % (i))
+                im = np.load(img_file)
+                im = np.rollaxis(im, 3, 1)
+                imgs.append(im)
+            imgs = np.asarray(imgs)
+            imgs_all.append(imgs)
+        return np.asarray(imgs_all)

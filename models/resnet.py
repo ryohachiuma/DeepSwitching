@@ -5,8 +5,7 @@ class ResNet(nn.Module):
     def __init__(self, out_dim, fix_params=False, running_stats=False):
         super().__init__()
         self.out_dim = out_dim
-        #self.resnet = models.resnet18(pretrained=True)
-        self.resnet = models.resnet18()
+        self.resnet = models.resnet18(pretrained=True)
         if fix_params:
             for param in self.resnet.parameters():
                 param.requires_grad = False

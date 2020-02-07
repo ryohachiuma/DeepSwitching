@@ -12,6 +12,11 @@ class Config:
             print("Config file doesn't exist: %s" % cfg_name)
             exit(0)
         cfg = yaml.load(open(cfg_name, 'r'), Loader=yaml.FullLoader)
+        self.data_dir = './datasets'
+        self.meta_id = cfg['meta_id']
+        self.meta = yaml.load(open('%s/meta/meta_file.yml' % (self.data_dir), 'r'), Loader=yaml.FullLoader)
+        self.camera_num = self.meta['camera_num']
+        self.takes = {x: self.meta[x] for x in ['train', 'test']}
 
         # create dirs
         self.base_dir = 'results'
@@ -47,6 +52,8 @@ class Config:
         self.weightdecay = cfg.get('weight_decay', 0.0)
         self.bi_dir = cfg.get('bi_dir', True)
         self.augment = cfg.get('augment', False)
+        self.batch_size = cfg.get('batch_size')
+        
 
         self.w_d = cfg.get('w_d', 1.0)
 
