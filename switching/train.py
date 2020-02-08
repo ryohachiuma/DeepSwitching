@@ -24,6 +24,7 @@ parser.add_argument('--mode', default='train')
 parser.add_argument('--data', default=None)
 parser.add_argument('--gpu-index', type=int, default=0)
 parser.add_argument('--iter', type=int, default=0)
+
 args = parser.parse_args()
 
 cfg = Config(args.cfg, create_dirs=(args.iter == 0))
@@ -101,7 +102,7 @@ def run_epoch(dataset, mode='train'):
         epoch_loss += loss.cpu().item() * num
         epoch_num_sample += num
         epoch_cat_loss += cat_loss.cpu().item() * num
-        epoch_switch_loss += diff_loss.cpu().item() * num
+        epoch_switch_loss += switch_loss.cpu().item() * num
         """clean up gpu memory"""
         torch.cuda.empty_cache()
 
