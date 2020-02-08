@@ -13,7 +13,6 @@ class Config:
             exit(0)
         cfg = yaml.load(open(cfg_name, 'r'), Loader=yaml.FullLoader)
         self.data_dir = './datasets'
-        self.meta_id = cfg['meta_id']
         self.meta = yaml.load(open('%s/meta/meta_file.yml' % (self.data_dir), 'r'), Loader=yaml.FullLoader)
         self.camera_num = self.meta['camera_num']
         self.takes = {x: self.meta[x] for x in ['train', 'test']}
@@ -32,7 +31,7 @@ class Config:
             recreate_dirs(self.log_dir, self.tb_dir)
 
         self.seed = cfg['seed']
-        self.fr_num = cfg['fr_num']
+        self.fr_num = cfg.get('fr_num', 20)
         self.v_net_param = cfg.get('v_net_param', None)
         self.v_hdim = cfg['v_hdim']
         self.mlp_dim = cfg['mlp_dim']
@@ -45,13 +44,10 @@ class Config:
         self.num_sample = cfg.get('num_sample', 20000)
         self.save_model_interval = cfg['save_model_interval']
         self.fr_margin = cfg['fr_margin']
-        self.causal = cfg.get('causal', False)
-        self.cnn_type = cfg.get('cnn_type', 'resnet')
         self.is_dropout = cfg.get('dropout', False)
         self.weightdecay = cfg.get('weight_decay', 0.0)
         self.bi_dir = cfg.get('bi_dir', True)
-        self.augment = cfg.get('augment', False)
-        self.batch_size = cfg.get('batch_size')
+        self.batch_size = cfg.get('batch_size', 5)
     
         self.w_d = cfg.get('w_d', 1.0)
 

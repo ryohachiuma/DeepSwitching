@@ -1,3 +1,5 @@
+"""Deep Switching: A deep learning based camera selection for occlusion-less surgery recording."""
+
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -37,9 +39,7 @@ torch.manual_seed(cfg.seed)
 tb_logger = Logger(cfg.tb_dir)
 logger = create_logger(os.path.join(cfg.log_dir, 'log.txt'))
 
-"""Dataset"""
-tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
-val_dataset = Dataset(cfg, 'val', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
+
 
 """network"""
 dsnet = DSNet(2, cfg.v_hdim, cfg.cnn_fdim, mlp_dim=cfg.mlp_dim, v_net_param=cfg.v_net_param, \
@@ -84,13 +84,14 @@ def run_epoch(dataset, mode='train'):
         """1. Categorical Loss"""
         """TODO: Change from cross entropy to focal loss"""
         cat_loss = ce_loss(prob_pred.view(-1, 2), labels.view(-1, 1))
-        """2. Switching loss: if the selected camera is different from the next selection, 
-        penalize that."""
+        """2. Switching loss: if the selected camera is different from the next frame, 
+        penalize that. This is just a regularization term."""
         prev_indices_pred = indices_pred[:, :-1]
         next_indices_pred = indices_pred[:, 1: ]
-        diff_loss = torch.abs(next_indices_pred - prev_indices_pred)
-        diff_loss = torch.sum(diff_loss / (diff_loss + 1e-8), dim=1)
-        loss = cat_loss + cfg.w_d * diff_loss
+        switch_loss = torch.abs(next_indices_pred - prev_indices_pred)
+        switch_loss = torch.sum(switch_loss / (switch_loss + 1e-8), dim=1)
+        loss = cat_loss + cfg.w_d * switch_loss
+        loss = loss.sum()
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
@@ -115,11 +116,16 @@ def run_epoch(dataset, mode='train'):
 
 if args.mode == 'train':
     dsnet.train()
+
+    """Dataset"""
+    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
+    val_dataset = Dataset(cfg, 'val', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.shuffle, 2*cfg.fr_margin, cfg.num_sample)
+    
     for i_epoch in range(args.iter, cfg.num_epoch):
-        tr_loss, tr_cat_loss, tr_sw_loss = run_epoch(tr_dataset, 'train')
+        tr_loss, tr_cat_loss, tr_sw_loss = run_epoch(tr_dataset, mode='train')
         tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [tr_loss, tr_cat_loss, tr_sw_loss], i_epoch)
 
-        val_loss, val_cat_loss, val_sw_loss = run_epoch(val_dataset, 'val')
+        val_loss, val_cat_loss, val_sw_loss = run_epoch(val_dataset, mode='val')
         tb_logger.scalar_summary(['val_loss', 'val_ce_loss', 'val_switch_loss'], [val_loss, val_cat_loss, val_sw_loss], i_epoch)
 
 
@@ -128,3 +134,7 @@ if args.mode == 'train':
                 cp_path = '%s/iter_%04d.p' % (cfg.model_dir, i_epoch + 1)
                 model_cp = {'ds_net': dsnet.state_dict()}
                 pickle.dump(model_cp, open(cp_path, 'wb'))
+
+elif args.mode == 'test':
+    denet.test()
+    print('test')

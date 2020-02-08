@@ -1,4 +1,3 @@
-meta_id: meta_subject_01
 seed: 1
 fr_num: 30
 v_hdim: 128
@@ -9,5 +8,7 @@ num_epoch: 500
 shuffle: true
 save_model_interval: 100
 fr_margin: 5
+batch_size: 5
+bi_dir: true
 
 w_d: 1.e-3

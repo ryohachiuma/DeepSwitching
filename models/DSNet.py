@@ -20,12 +20,12 @@ class DSNet(nn.Module):
         self.cnn = ResNet(cnn_fdim, running_stats=training)
 
         self.v_net_type = v_net_type
-        self.v_net = nn.LSTM(cnn_fdim, v_hdim, 2, batch_first=True, dropout=0.1, bidirectional= bi_dir)
+        self.v_net = nn.LSTM(cnn_fdim, v_hdim, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
         self.mlp = MLP(v_hdim * 2, mlp_dim, 'relu', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
 
-    def soft_argmax(self, inputs, beta=100, dim=1, epsilon=1e-12):
+    def soft_argmax(self, inputs, beta=10, dim=1, epsilon=1e-12):
         '''
         applay softargmax on inputs, return \sum_i ( i * (exp(A_i * beta) / \sum_i(exp(A_i * beta))))
         according to https://bouthilx.wordpress.com/2013/04/21/a-soft-argmax/
