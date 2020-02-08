@@ -8,7 +8,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--surgery-id', type=str, default='surgery_01')
 parser.add_argument('--scale-size', type=int, default=224)
 parser.add_argument('--save-raw', action='store_true', default=False)
-parser.add_argument('--camera-id', type=int, default=0)
+parser.add_argument('--skip-prev', action='store_true', default=False)
+parser.add_argument('--camera-id', type=int, default=None)
 
 args = parser.parse_args()
 
@@ -23,12 +24,12 @@ os.makedirs(frames_folder, exist_ok=True)
 files = glob.glob(os.path.join(raw_folder, args.surgery_id, '*.mp4'))
 files.sort()
 print(files)
-files = [files[args.camera_id]]
-camera_id = 0
+if args.camara_id is not None:
+    files = [files[args.camera_id]]
 for file in files:
     print(file)
-    frame_dir = os.path.join(frames_folder, args.surgery_id, str(camera_id))
-    npy_dir = os.path.join(npy_folder, args.surgery_id, str(camera_id))
+    frame_dir = os.path.join(frames_folder, args.surgery_id, str(args.camera_id))
+    npy_dir = os.path.join(npy_folder, args.surgery_id, str(args.camera_id))
     os.makedirs(frame_dir, exist_ok=True)  
     os.makedirs(npy_dir, exist_ok=True)
     video = cv2.VideoCapture(file)
@@ -40,10 +41,11 @@ for file in files:
             break
         cv2.resize(frame, dsize=(args.scale_size, args.scale_size))
         out_file = os.path.join(frame_dir, '%06d.png' % (frame_id))
-        out_npz_file = os.path.join(npy_dir, '%06d.npz' % (frame_id))
-        #if os.path.isfile(out_file) or os.path.isfile(out_npz_file):
-        #    frame_id+=1
-        #    continue
+        out_npz_file = os.path.join(npy_dir, '%06d.npy' % (frame_id))
+
+        if args.skip_prev and (os.path.isfile(out_file) or os.path.isfile(out_npz_file)):
+            frame_id+=1
+            continue
         if args.save_raw:
             cv2.imwrite(out_file, frame)
 
@@ -51,8 +53,7 @@ for file in files:
         frame = frame[:,:,::-1]
         frame = (frame - IMG_MEAN) / IMG_STD
 
-        np.savez(out_npz_file, frame)
+        np.save(out_npz_file, frame)
 
         frame_id+=1
     video.release()
-    camera_id+=1
