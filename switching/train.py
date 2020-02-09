@@ -79,7 +79,7 @@ def run_epoch(dataset, mode='train'):
         labels = tensor(labels_np, dtype=dtype, device=device).contiguous()
         prob_pred, indices_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
-        indices_pred = indices_pred[:, :, fr_margin:-fr_margin]
+        indices_pred = indices_pred[:, fr_margin:-fr_margin]
         """Compute loss"""
         """1. Categorical Loss"""
         """TODO: Change from cross entropy to focal loss"""
