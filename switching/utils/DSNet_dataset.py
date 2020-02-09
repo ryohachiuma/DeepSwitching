@@ -83,6 +83,7 @@ class Dataset:
 
             img = self.load_imgs(take_ind, fr_start, fr_end)
             label = self.convert_label(take_ind, fr_start, fr_end)
+            print(label.shape)
             imgs.append(img)
             labels.append(label)
 
