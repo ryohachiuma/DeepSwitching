@@ -8,7 +8,7 @@ from models.mlp import MLP
 
 class DSNet(nn.Module):
 
-    def __init__(self, out_dim, v_hdim, cnn_fdim, frame_num=10, camera_num=3, frame_shape=(3, 224, 224), mlp_dim=(128, 64),
+    def __init__(self, out_dim, v_hdim, cnn_fdim, dtype, device, frame_num=10, camera_num=3, frame_shape=(3, 224, 224), mlp_dim=(128, 64),
                  v_net_type='lstm', v_net_param=None, bi_dir=False, training=True, is_dropout=False):
         super().__init__()
         self.out_dim = out_dim
@@ -18,6 +18,8 @@ class DSNet(nn.Module):
         self.camera_num = camera_num
         self.frame_num = frame_num
         self.cnn = ResNet(cnn_fdim, running_stats=training)
+        self.dtype = dtype
+        self.device = device
 
         self.v_net_type = v_net_type
         self.v_net = nn.LSTM(cnn_fdim, v_hdim, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
@@ -37,7 +39,8 @@ class DSNet(nn.Module):
         A_max = torch.max(inputs, dim=dim, keepdim=True)[0]
         A_exp = torch.exp((inputs - A_max)*beta)
         A_softmax = A_exp / (torch.sum(A_exp, dim=dim, keepdim=True) + epsilon)
-        indices = torch.arange(start=0, end=inputs.size()[dim]).float()
+        indices = torch.arange(start=0, end=inputs.size()[dim], dtype=self.dtype, \
+            device=self.device, requires_grad=True).float()
         return torch.matmul(A_softmax, indices)
 
     def forward(self, inputs):
