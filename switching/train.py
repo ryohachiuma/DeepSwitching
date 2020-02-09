@@ -76,7 +76,7 @@ def run_epoch(dataset, mode='train'):
     for imgs_np, labels_np in dataset:
         num = imgs_np.shape[2] - 2 * fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)
-        labels = tensor(labels_np, dtype=dtype, device=device)
+        labels = tensor(labels_np, dtype=torch.int, device=device)
         labels = labels[:, :, fr_margin:-fr_margin]
         prob_pred, indices_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
@@ -86,7 +86,7 @@ def run_epoch(dataset, mode='train'):
         """TODO: Change from cross entropy to focal loss"""
         print(prob_pred.contiguous().view(cfg.batch_size*cfg.camera_num*cfg.fr_num-2*fr_margin, 2).size())
         print(labels.size())
-        cat_loss = ce_loss(prob_pred.view(-1, 2), labels.view(-1,))
+        cat_loss = ce_loss(prob_pred.contiguous().view(-1, 2), labels.contiguous().view(-1,))
         """2. Switching loss: if the selected camera is different from the next frame, 
         penalize that. This is just a regularization term."""
         prev_indices_pred = indices_pred[:, :-1]
