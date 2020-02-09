@@ -48,7 +48,7 @@ class DSNet(nn.Module):
         Inputs: Batch, Camera, Sequence, Channel, H, W
         Outputs: probs(Batch, Camera, Sequence, 2),  max_indices(Batch, Sequence)
         '''
-        print(inputs.size())
+        print(inputs.view((-1,) + self.frame_shape).size())
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, self.frame_num, self.cnn_fdim))
         print(local_feat.size())
