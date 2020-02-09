@@ -1,5 +1,5 @@
 seed: 1
-fr_num: 16
+fr_num: 20
 v_hdim: 128
 mlp_dim: [128, 64]
 cnn_fdim: 128
@@ -8,7 +8,7 @@ num_epoch: 500
 shuffle: true
 save_model_interval: 100
 fr_margin: 2
-batch_size: 3
+batch_size: 10
 bi_dir: true
 
 w_d: 1.e-3
