@@ -21,7 +21,6 @@ from switching.utils.DSNet_config import Config
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', default='model_01')
 parser.add_argument('--mode', default='train')
-parser.add_argument('--data', default=None)
 parser.add_argument('--gpu-index', type=int, default=0)
 parser.add_argument('--iter', type=int, default=0)
 

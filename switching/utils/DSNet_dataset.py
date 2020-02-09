@@ -112,8 +112,8 @@ class Dataset:
             imgs = np.rollaxis(imgs, 3, 1)
             imgs_all.append(imgs)
         imgs_all = np.asarray(imgs_all)
-        print(imgs_all.shape)
+        #print(imgs_all.shape)
         imgs_all = np.rollaxis(imgs_all, 0, 2)
-        print(imgs_all.shape)
-        assert imgs_all.shape == (self.camera_num, end-start,(self.frame_size))
+        #print(imgs_all.shape)
+        #assert imgs_all.shape == (self.camera_num, end-start,(self.frame_size))
         return imgs_all
