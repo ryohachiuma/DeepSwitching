@@ -72,6 +72,8 @@ class Dataset:
             if self.mode == 'train':
                 fr_lb = 0
                 fr_ub = int(seq_len * self.split_ratio)
+                print(seq_len)
+                print(fr_ub)
                 fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
                 fr_end = fr_start + self.fr_num
 
