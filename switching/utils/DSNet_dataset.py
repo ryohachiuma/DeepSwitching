@@ -109,7 +109,7 @@ class Dataset:
         for i in range(start, end):
             img_file = os.path.join(take_folder,'%06d.npz' % (i))
             imgs = np.load(img_file)['imgs']
-            imgs = np.rollaxis(imgs, 3, 2)
+            imgs = np.rollaxis(imgs, 3, 1)
             imgs_all.append(imgs)
         imgs_all = np.asarray(imgs_all)
         print(imgs_all.shape)
