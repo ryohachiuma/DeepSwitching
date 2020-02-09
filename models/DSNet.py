@@ -40,7 +40,7 @@ class DSNet(nn.Module):
         A_exp = torch.exp((inputs - A_max)*beta)
         A_softmax = A_exp / (torch.sum(A_exp, dim=dim, keepdim=True) + epsilon)
         indices = torch.arange(start=0, end=inputs.size()[dim], dtype=self.dtype, \
-            device=self.device, requires_grad=True).float()
+            device=self.device, requires_grad=True)
         return torch.matmul(A_softmax, indices)
 
     def forward(self, inputs):
