@@ -76,7 +76,7 @@ def run_epoch(dataset, mode='train'):
     for imgs_np, labels_np in dataset:
         num = imgs_np.shape[2] - 2 * fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)
-        labels = tensor(labels_np, dtype=dtype, device=device)
+        labels = tensor(labels_np, dtype=dtype, device=device).contiguous()
         prob_pred, indices_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
         indices_pred = indices_pred[:, :, fr_margin:-fr_margin]

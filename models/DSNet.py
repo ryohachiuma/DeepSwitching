@@ -51,7 +51,7 @@ class DSNet(nn.Module):
         #batch x cameraNum, framenum, v_hdim
         local_feat, _ = self.v_net(local_feat)
         #batch, cameraNum, framenum, v_hdim
-        local_feat = local_feat.view(-1, self.camera_num, self.frame_num, self.v_hdim)
+        local_feat = local_feat.contiguous().view(-1, self.camera_num, self.frame_num, self.v_hdim)
         #batch, 1, framenum, v_hdim
         glob_feat = torch.max(local_feat, 1, keepdim=True)[0]
         #batch, cameraNum, framenum, v_hdim
