@@ -7,8 +7,8 @@ lr: 1.e-4
 num_epoch: 500
 shuffle: true
 save_model_interval: 100
-fr_margin: 2
-batch_size: 10
+fr_margin: 3
+batch_size: 6
 bi_dir: true
 
 w_d: 1.e-3
