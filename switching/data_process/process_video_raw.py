@@ -3,6 +3,7 @@ import os
 import glob
 import cv2
 import numpy as np
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--surgery-id', type=str, default='surgery_01')
@@ -15,45 +16,38 @@ args = parser.parse_args()
 
 IMG_MEAN = [0.485, 0.456, 0.406]
 IMG_STD = [0.229, 0.224, 0.225]
+FRAME_NUM = 54171
+CAMERA_NUM = 5
 
 raw_folder = './datasets/raw_video'
-frames_folder = './datasets/frames_raw'
 npy_folder = './datasets/frames'
-os.makedirs(frames_folder, exist_ok=True)
+os.makedirs(npy_folder, exist_ok=True)
 
 files = glob.glob(os.path.join(raw_folder, args.surgery_id, '*.mp4'))
 files.sort()
 print(files)
-if args.camara_id is not None:
-    files = [files[args.camera_id]]
+
+frame_dir = os.path.join(npy_folder, args.surgery_id)
+captures = []
 for file in files:
-    print(file)
-    frame_dir = os.path.join(frames_folder, args.surgery_id, str(args.camera_id))
-    npy_dir = os.path.join(npy_folder, args.surgery_id, str(args.camera_id))
-    os.makedirs(frame_dir, exist_ok=True)  
-    os.makedirs(npy_dir, exist_ok=True)
     video = cv2.VideoCapture(file)
-    frame_id = 0
-    
-    while video.isOpened():
-        ret, frame = video.read()
-        if not ret:
-            break
+    captures.append(video)
+
+for i in tqdm(range(FRAME_NUM)):
+    imgs = []
+    out_file = os.path.join(frame_dir, '%06d.npz' % (i))
+    if args.skip_prev and os.path.isfile(out_file):
+        continue
+    for cap in captures:
+        _, frame = cap.read()
         cv2.resize(frame, dsize=(args.scale_size, args.scale_size))
-        out_file = os.path.join(frame_dir, '%06d.png' % (frame_id))
-        out_npz_file = os.path.join(npy_dir, '%06d.npy' % (frame_id))
-
-        if args.skip_prev and (os.path.isfile(out_file) or os.path.isfile(out_npz_file)):
-            frame_id+=1
-            continue
-        if args.save_raw:
-            cv2.imwrite(out_file, frame)
-
         frame = frame.astype(np.float32) // 255.0
         frame = frame[:,:,::-1]
         frame = (frame - IMG_MEAN) / IMG_STD
+        imgs.append(frame)
+    imgs = np.asarray(imgs) # Cam, H, W, Channel
+    np.savez_compressed(out_file, imgs=imgs)
+        
 
-        np.save(out_npz_file, frame)
-
-        frame_id+=1
-    video.release()
+for cap in captures:
+    cap.release()

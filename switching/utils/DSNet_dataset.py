@@ -8,7 +8,7 @@ import cv2
 
 class Dataset:
 
-    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000):
+    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000):
         self.cfg = cfg
         self.mode = mode
         self.fr_num = fr_num
@@ -17,6 +17,7 @@ class Dataset:
         self.num_sample = num_sample
         
         self.camera_num = camera_num
+        self.frame_size = frame_size
         self.batch_size = batch_size
         self.split_ratio = split_ratio
 
@@ -103,13 +104,14 @@ class Dataset:
     def load_imgs(self, take_ind, start, end):
         take_folder = '%s/%s' % (self.image_folder, self.takes[take_ind])
         imgs_all = []
-        for cam in range(self.camera_num):
-            imgs = []
-            for i in range(start, end):
-                img_file = os.path.join(take_folder, str(cam), '%06d.npz' % (i))
-                im = np.load(img_file)
-                im = np.rollaxis(im, 3, 1)
-                imgs.append(im)
-            imgs = np.asarray(imgs)
+
+        for i in range(start, end):
+            img_file = os.path.join(take_folder,'%06d.npz' % (i))
+            imgs = np.load(img_file)['imgs']
+            imgs = np.rollaxis(imgs, 3, 1)
             imgs_all.append(imgs)
-        return np.asarray(imgs_all)
+        imgs_all = np.asarray(imgs_all)
+        imgs_all = np.rollaxis(imgs_all, 0, 1)
+
+        assert imgs_all.shape == (self.camera_num, end-start,(self.frame_size))
+        return imgs_all
