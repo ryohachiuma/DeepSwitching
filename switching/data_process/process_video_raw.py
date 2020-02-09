@@ -40,7 +40,7 @@ for i in tqdm(range(FRAME_NUM)):
         continue
     for cap in captures:
         _, frame = cap.read()
-        cv2.resize(frame, dsize=(args.scale_size, args.scale_size))
+        frame = cv2.resize(frame, dsize=(args.scale_size, args.scale_size))
         frame = frame.astype(np.float32) // 255.0
         frame = frame[:,:,::-1]
         frame = (frame - IMG_MEAN) / IMG_STD
