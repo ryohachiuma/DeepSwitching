@@ -29,7 +29,8 @@ class Dataset:
         
         if mode == 'train' or mode == 'val':
             self.takes = self.cfg.takes['train']
-            self.seq_len = self.cfg.seq_len['train']
+            self.seq_len = [54170]
+            #self.seq_len = self.cfg.seq_len['train']
         else:
             self.takes = self.cfg.takes[mode]
             self.seq_len = self.cfg.seq_len[mode]
