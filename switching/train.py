@@ -102,16 +102,16 @@ def run_epoch(dataset, mode='train'):
         # logging
         epoch_loss += loss.cpu() * num
         epoch_num_sample += num
-        epoch_cat_loss += cat_loss.cpu() * num
-        epoch_switch_loss += switch_loss.cpu() * num
+        epoch_cat_loss += cat_loss.sum().cpu() * num
+        epoch_switch_loss += switch_loss.sum().cpu() * num
         """clean up gpu memory"""
         torch.cuda.empty_cache()
 
     epoch_loss /= epoch_num_sample
     epoch_cat_loss /= epoch_num_sample
     epoch_switch_loss /= epoch_num_sample
-    logger.info('epoch {:4d}    time {:.2f}     nsample {}   loss {:.4f} '
-                    .format(i_epoch, time.time() - t0, epoch_num_sample, epoch_loss))
+    logger.info('epoch {:4d}    time {:.2f}     nsample {}   loss {:.4f} cat_loss {:.4f} sw_loss {:.4f}'
+                    .format(i_epoch, time.time() - t0, epoch_num_sample, epoch_loss, epoch_cat_loss, epoch_switch_loss))
 
     return epoch_loss, epoch_cat_loss, epoch_switch_loss
 
