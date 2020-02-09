@@ -51,18 +51,25 @@ class DSNet(nn.Module):
         print(inputs.size())
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, self.frame_num, self.cnn_fdim))
+        print(local_feat.size())
         #batch x cameraNum, framenum, v_hdim
         local_feat, _ = self.v_net(local_feat)
+        print(local_feat.size())
         #batch, cameraNum, framenum, v_hdim
         local_feat = local_feat.contiguous().view(-1, self.camera_num, self.frame_num, self.v_hdim)
+        print(local_feat.size())
         #batch, 1, framenum, v_hdim
         glob_feat = torch.max(local_feat, 1, keepdim=True)[0]
+        print(glob_feat.size())
         #batch, cameraNum, framenum, v_hdim
         glob_feat = glob_feat.repeat(1, self.camera_num, 1, 1)
+        print(glob_feat.size())
         #batch x cameraNum x framenum, v_hdimx2 
         cam_features = torch.cat([local_feat, glob_feat], -1).view(-1, self.v_hdim * 2)
+        print(cam_features.size())
         #batch x cameraNum x framenum, mlp_dim[-1] 
         cam_features = self.mlp(cam_features)
+        print(cam_features.size())
         #batch, cameraNum, framenum, 2
         probs = self.softmax(self.linear(cam_features)).view(-1, self.camera_num, self.frame_num, self.out_dim)
         print(probs.size())
