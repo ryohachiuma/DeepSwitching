@@ -39,7 +39,6 @@ class Config:
         self.optimizer = cfg.get('optimizer', 'Adam')
         self.lr = cfg['lr']
         self.num_epoch = cfg['num_epoch']
-        self.iter_method = cfg['iter_method']
         self.shuffle = cfg.get('shuffle', False)
         self.num_sample = cfg.get('num_sample', 20000)
         self.save_model_interval = cfg['save_model_interval']
