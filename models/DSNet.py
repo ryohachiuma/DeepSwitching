@@ -65,6 +65,7 @@ class DSNet(nn.Module):
         cam_features = self.mlp(cam_features)
         #batch, cameraNum, framenum, 2
         probs = self.softmax(self.linear(cam_features)).view(-1, self.camera_num, self.frame_num, self.out_dim)
+        print(probs.size())
         #batch, cameraNum, framenum
         select_prob = probs[:, :, :, 1] # 0: not selected, 1: selected
         #batch x self.frame_num, cameraNum
