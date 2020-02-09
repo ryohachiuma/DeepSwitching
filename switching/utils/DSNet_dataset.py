@@ -97,11 +97,9 @@ class Dataset:
             for c in range(self.camera_num):
                 if l == c:
                     one_hot_label[c] = 1
-            res_label.append(label)
+            res_label.append(one_hot_label)
         res_label = np.asarray(res_label)
-        print(res_label.shape)
         res_label = np.transpose(res_label)
-        print(res_label.shape)
         return np.asarray(res_label)
 
     def load_imgs(self, take_ind, start, end):
