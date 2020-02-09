@@ -84,8 +84,6 @@ def run_epoch(dataset, mode='train'):
         """Compute loss"""
         """1. Categorical Loss"""
         """TODO: Change from cross entropy to focal loss"""
-        print(prob_pred.contiguous().view(cfg.batch_size*cfg.camera_num*cfg.fr_num-2*fr_margin, 2).size())
-        print(labels.size())
         cat_loss = ce_loss(prob_pred.contiguous().view(-1, 2), labels.contiguous().view(-1,))
         """2. Switching loss: if the selected camera is different from the next frame, 
         penalize that. This is just a regularization term."""
