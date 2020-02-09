@@ -42,8 +42,8 @@ logger = create_logger(os.path.join(cfg.log_dir, 'log.txt'))
 
 
 """network"""
-dsnet = DSNet(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, v_net_param=cfg.v_net_param, \
-                            bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
+dsnet = DSNet(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, frame_num=cfg.frame_num, camera_num=cfg.camera_num, \
+    v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
 
 
 if args.iter > 0:
