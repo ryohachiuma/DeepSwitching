@@ -1,5 +1,5 @@
 seed: 1
-fr_num: 10
+fr_num: 16
 v_hdim: 128
 mlp_dim: [128, 64]
 cnn_fdim: 128
