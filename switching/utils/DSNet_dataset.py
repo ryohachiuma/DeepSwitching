@@ -109,11 +109,14 @@ class Dataset:
         for i in range(start, end):
             img_file = os.path.join(take_folder,'%06d.npz' % (i))
             imgs = np.load(img_file)['imgs']
-            imgs = np.rollaxis(imgs, 3, 1)
+            print(imgs.shape)
+            pritnt("channel roll")
+            imgs = np.rollaxis(imgs, 3, 2)
+            print(imgs.shape)
             imgs_all.append(imgs)
         imgs_all = np.asarray(imgs_all)
         print(imgs_all.shape)
-        imgs_all = np.rollaxis(imgs_all, 0, 1)
+        imgs_all = np.rollaxis(imgs_all, 0, 2)
         print(imgs_all.shape)
         assert imgs_all.shape == (self.camera_num, end-start,(self.frame_size))
         return imgs_all
