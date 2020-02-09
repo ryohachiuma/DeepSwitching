@@ -76,7 +76,7 @@ def run_epoch(dataset, mode='train'):
     for imgs_np, labels_np in dataset:
         num = imgs_np.shape[2] - 2 * fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)
-        labels = tensor(labels_np, dtype=torch.int, device=device)
+        labels = tensor(labels_np, dtype=torch.long, device=device)
         labels = labels[:, :, fr_margin:-fr_margin]
         prob_pred, indices_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
@@ -93,16 +93,17 @@ def run_epoch(dataset, mode='train'):
         switch_loss = torch.sum(switch_loss / (switch_loss + 1e-8), dim=1)
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.sum()
+        print(loss)
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
         
         # logging
-        epoch_loss += loss.cpu().item() * num
+        epoch_loss += loss.cpu() * num
         epoch_num_sample += num
-        epoch_cat_loss += cat_loss.cpu().item() * num
-        epoch_switch_loss += switch_loss.cpu().item() * num
+        epoch_cat_loss += cat_loss.cpu() * num
+        epoch_switch_loss += switch_loss.cpu() * num
         """clean up gpu memory"""
         torch.cuda.empty_cache()
 
