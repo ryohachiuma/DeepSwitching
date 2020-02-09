@@ -55,7 +55,7 @@ if args.iter > 0:
 
 dsnet.to(device)
 
-ce_loss = nn.NLLoss()
+ce_loss = nn.NLLLoss()
 
 if cfg.optimizer == 'Adam':
     optimizer = torch.optim.Adam(dsnet.parameters(), lr=cfg.lr, weight_decay=cfg.weightdecay)
