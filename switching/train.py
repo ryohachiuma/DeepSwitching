@@ -53,8 +53,9 @@ if args.iter > 0:
     dsnet.load_state_dict(model_cp['ds_net'], strict=True)
 
 dsnet.to(device)
+class_weights = torch.tensor([0.2, 0.8], dtype=dtype, device=device)
+ce_loss = nn.NLLLoss(weights=class_weights)
 
-ce_loss = nn.NLLLoss()
 
 if cfg.optimizer == 'Adam':
     optimizer = torch.optim.Adam(dsnet.parameters(), lr=cfg.lr, weight_decay=cfg.weightdecay)
@@ -76,8 +77,7 @@ def run_epoch(dataset, mode='train'):
     for imgs_np, labels_np in dataset:
         num = imgs_np.shape[2] - 2 * fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)
-        labels = tensor(labels_np, dtype=torch.long, device=device)
-        labels = labels[:, :, fr_margin:-fr_margin]
+        labels = tensor(labels_np, dtype=torch.long, device=device)[:, :, fr_margin:-fr_margin]
         prob_pred, indices_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
         indices_pred = indices_pred[:, fr_margin:-fr_margin]
@@ -93,7 +93,7 @@ def run_epoch(dataset, mode='train'):
         switch_loss = torch.sum(switch_loss / (switch_loss + 1e-8), dim=1)
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.sum()
-        print(loss)
+        print('{:4f}, {:4f}, {:4f}'.format(cat_loss.sum(), switch_loss.sum(), loss))
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
@@ -138,5 +138,5 @@ if args.mode == 'train':
                 pickle.dump(model_cp, open(cp_path, 'wb'))
 
 elif args.mode == 'test':
-    denet.test()
+    denet.eval()
     print('test')

@@ -35,7 +35,7 @@ for file in files:
 
 for i in tqdm(range(FRAME_NUM)):
     imgs = []
-    out_file = os.path.join(frame_dir, '%06d.npz' % (i))
+    out_file = os.path.join(frame_dir, '%06d.npy' % (i))
     if args.skip_prev and os.path.isfile(out_file):
         continue
     for cap in captures:
@@ -46,7 +46,8 @@ for i in tqdm(range(FRAME_NUM)):
         frame = (frame - IMG_MEAN) / IMG_STD
         imgs.append(frame)
     imgs = np.asarray(imgs) # Cam, H, W, Channel
-    np.savez_compressed(out_file, imgs=imgs)
+    #np.savez_compressed(out_file, imgs=imgs)
+    np.save(out_file, imgs)
         
 
 for cap in captures:
