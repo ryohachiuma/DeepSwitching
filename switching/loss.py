@@ -59,12 +59,13 @@ class SwitchingLoss(nn.Module):
         super(SwitchingLoss, self).__init__()
         self.eps=eps
 
-    def forward(self, preds_indices):
+    def forward(self, preds_indices, gt_switch):
         prev_indices_pred = preds_indices[:, :-1]
         next_indices_pred = preds_indices[:, 1: ]
-        switch_loss = torch.abs(next_indices_pred - prev_indices_pred)
-        switch_loss = torch.mean(switch_loss / (switch_loss + self.eps), dim=1)   
-        return switch_loss     
+        diff = torch.abs(next_indices_pred - prev_indices_pred)
+        switched = (diff / (diff + self.eps) - 1.0) - 1.0
+        switch_loss = gt_switch * switched ** 2 + (1.0 - gt_switch) * diff ** 2
+        return switch_loss.mean(dim=1)
 
 if __name__ == "__main__":
     device = torch.device("cuda")
@@ -80,5 +81,6 @@ if __name__ == "__main__":
     '''
 
     switch_loss = SwitchingLoss()
+    #gt_switch = torch.Tensor([0, 0, 0, 0], [])
     _indices = torch.Tensor([[1, 1, 1, 1, 1], [1, 1, 1, 1, 2], [1, 1, 2, 1, 1], [1, 1, 2, 1, 2], [1, 2, 1, 3, 1]])
     print(switch_loss(_indices))

@@ -128,11 +128,11 @@ if args.mode == 'train':
         tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [tr_loss, tr_cat_loss, tr_sw_loss], i_epoch)
 
         torch.cuda.empty_cache()
-
+        '''
         val_loss, val_cat_loss, val_sw_loss = run_epoch(val_dataset, mode='val')
         tb_logger.scalar_summary(['val_loss', 'val_ce_loss', 'val_switch_loss'], [val_loss, val_cat_loss, val_sw_loss], i_epoch)
         torch.cuda.empty_cache()
-
+        '''
         with to_cpu(dsnet):
             if cfg.save_model_interval > 0 and (i_epoch + 1) % cfg.save_model_interval == 0:
                 cp_path = '%s/iter_%04d.p' % (cfg.model_dir, i_epoch + 1)

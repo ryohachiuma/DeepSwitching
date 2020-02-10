@@ -107,8 +107,8 @@ class Dataset:
         label = self.labels[take_ind][start:end]
         res_label = []
         res_label = label[1:] == label[:-1]
-        return res_label
-
+        return res_label.astype(np.int64) # The first element contains switching is occured between frame 0 and 1.
+ 
     def load_imgs(self, take_ind, start, end):
         take_folder = '%s/%s' % (self.image_folder, self.takes[take_ind])
         imgs_all = []
