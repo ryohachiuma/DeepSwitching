@@ -38,7 +38,7 @@ class FocalLossWithOneHot(nn.Module):
 
 
 class FocalLossWithOutOneHot(nn.Module):
-    def __init__(self, gamma=0, eps=1e-7):
+    def __init__(self, gamma=1.0, eps=1e-7):
         super(FocalLossWithOutOneHot, self).__init__()
         self.gamma = gamma
         self.eps = eps
