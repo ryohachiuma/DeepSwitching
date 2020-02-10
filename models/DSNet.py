@@ -73,7 +73,7 @@ class DSNet(nn.Module):
         #batch, self.frame_num
         max_indices = max_indices.view(-1, self.frame_num)
 
-        return logits, max_indices
+        return torch.log(logits), max_indices
 
 
 if __name__ == '__main__':
