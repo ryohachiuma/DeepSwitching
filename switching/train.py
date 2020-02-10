@@ -89,10 +89,11 @@ def run_epoch(dataset, mode='train'):
         cat_loss = cat_crit(prob_pred.contiguous().view(-1, 2), labels.contiguous().view(-1,))
         """2. Switching loss: if the selected camera is different from the next frame, 
         penalize that. This is just a regularization term."""
-        switch_loss = switch_crit(indices_pred)
-        loss = cat_loss + cfg.w_d * switch_loss
+        #switch_loss = switch_crit(indices_pred)
+        #loss = cat_loss + cfg.w_d * switch_loss
+        loss = cat_loss
         loss = loss.mean()
-        print('{:4f}, {:4f}, {:4f}'.format(cat_loss.mean(), switch_loss.mean(), loss))
+        print('{:4f}'.format(loss))
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
@@ -102,7 +103,7 @@ def run_epoch(dataset, mode='train'):
         epoch_loss += loss.cpu() * num
         epoch_num_sample += num
         epoch_cat_loss += cat_loss.sum().cpu() * num
-        epoch_switch_loss += switch_loss.sum().cpu() * num
+        #epoch_switch_loss += switch_loss.sum().cpu() * num
         """clean up gpu memory"""
         torch.cuda.empty_cache()
         del imgs
