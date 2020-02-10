@@ -60,8 +60,8 @@ class SwitchingLoss(nn.Module):
         self.eps=eps
 
     def forward(self, preds_indices):
-        prev_indices_pred = preds_indices[:, :-1].int()
-        next_indices_pred = preds_indices[:, 1: ].int()
+        prev_indices_pred = preds_indices[:, :-1]
+        next_indices_pred = preds_indices[:, 1: ]
         switch_loss = torch.abs(next_indices_pred - prev_indices_pred)
         switch_loss = torch.mean(switch_loss / (switch_loss + self.eps), dim=1)   
         return switch_loss     
