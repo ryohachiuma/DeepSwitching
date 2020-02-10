@@ -63,9 +63,9 @@ class DSNet(nn.Module):
         #batch x cameraNum x framenum, mlp_dim[-1] 
         cam_features = self.mlp(cam_features)
         #batch, cameraNum, framenum, 2
-        probs = self.softmax(self.linear(cam_features)).view(-1, self.camera_num, self.frame_num, self.out_dim)
+        logits = self.softmax(self.linear(cam_features)).view(-1, self.camera_num, self.frame_num, self.out_dim)
         #batch, cameraNum, framenum
-        select_prob = probs[:, :, :, 1] # 0: not selected, 1: selected
+        select_prob = logits[:, :, :, 1] # 0: not selected, 1: selected
         #batch x self.frame_num, cameraNum
         select_prob = select_prob.permute(0, 2, 1).contiguous().view(-1, self.camera_num)
         #batch x self.frame_num
@@ -73,7 +73,7 @@ class DSNet(nn.Module):
         #batch, self.frame_num
         max_indices = max_indices.view(-1, self.frame_num)
 
-        return torch.log(probs), max_indices
+        return logits, max_indices
 
 
 if __name__ == '__main__':

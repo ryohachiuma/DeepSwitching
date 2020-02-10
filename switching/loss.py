@@ -44,16 +44,27 @@ class FocalLossWithOutOneHot(nn.Module):
         self.eps = eps
 
     def forward(self, input, target):
-        logit = F.softmax(input, dim=1)
-        logit = logit.clamp(self.eps, 1. - self.eps)
+        logit = input.clamp(self.eps, 1. - self.eps)
         logit_ls = torch.log(logit)
         loss = F.nll_loss(logit_ls, target, reduction="none")
         view = target.size() + (1,)
         index = target.view(*view)
         loss = loss * (1 - logit.gather(1, index).squeeze(1)) ** self.gamma # focal loss
 
-        return loss.sum()
+        return loss
 
+
+class SwitchingLoss(nn.Module):
+    def __init__(self, eps=1e-8):
+        super(SwitchingLoss, self).__init__()
+        self.eps=eps
+
+    def forward(self, preds_indices):
+        prev_indices_pred = preds_indices[:, :-1]
+        next_indices_pred = preds_indices[:, 1: ]
+        switch_loss = torch.abs(next_indices_pred - prev_indices_pred)
+        switch_loss = torch.mean(switch_loss / (switch_loss + 1e-8), dim=1)   
+        return switch_loss     
 
 if __name__ == "__main__":
     device = torch.device("cuda")

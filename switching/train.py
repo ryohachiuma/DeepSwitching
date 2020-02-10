@@ -14,6 +14,7 @@ sys.path.append(os.getcwd())
 
 from utils import *
 from models.DSNet import *
+from switching import loss
 from switching.utils.DSNet_dataset import Dataset
 from switching.utils.DSNet_config import Config
 
@@ -55,7 +56,8 @@ if args.iter > 0:
 dsnet.to(device)
 class_weights = torch.tensor([0.2, 0.8], dtype=dtype, device=device)
 ce_loss = nn.NLLLoss(weight=class_weights)
-
+cat_crit = loss.FocalLossWithOutOneHot()
+switch_crit = loss.SwitchingLoss()
 
 if cfg.optimizer == 'Adam':
     optimizer = torch.optim.Adam(dsnet.parameters(), lr=cfg.lr, weight_decay=cfg.weightdecay)
@@ -81,16 +83,12 @@ def run_epoch(dataset, mode='train'):
         prob_pred, indices_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
         indices_pred = indices_pred[:, fr_margin:-fr_margin]
-        """Compute loss"""
-        """1. Categorical Loss"""
-        """TODO: Change from cross entropy to focal loss"""
-        cat_loss = ce_loss(prob_pred.contiguous().view(-1, 2), labels.contiguous().view(-1,))
+
+        """1. Categorical Loss (Inputs: after-softmax logits, Outputs: Label)"""
+        cat_loss = cat_crit(prob_pred.contiguous().view(-1, 2), labels.contiguous().view(-1,))
         """2. Switching loss: if the selected camera is different from the next frame, 
         penalize that. This is just a regularization term."""
-        prev_indices_pred = indices_pred[:, :-1]
-        next_indices_pred = indices_pred[:, 1: ]
-        switch_loss = torch.abs(next_indices_pred - prev_indices_pred)
-        switch_loss = torch.mean(switch_loss / (switch_loss + 1e-8), dim=1)
+        switch_loss = switch_crit(indices_pred)
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.sum()
         print('{:4f}, {:4f}, {:4f}'.format(cat_loss.sum(), switch_loss.sum(), loss))
@@ -138,5 +136,5 @@ if args.mode == 'train':
                 pickle.dump(model_cp, open(cp_path, 'wb'))
 
 elif args.mode == 'test':
-    denet.eval()
+    dsnet.eval()
     print('test')
