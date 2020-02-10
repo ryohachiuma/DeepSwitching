@@ -90,7 +90,7 @@ def run_epoch(dataset, mode='train'):
         prev_indices_pred = indices_pred[:, :-1]
         next_indices_pred = indices_pred[:, 1: ]
         switch_loss = torch.abs(next_indices_pred - prev_indices_pred)
-        switch_loss = torch.sum(switch_loss / (switch_loss + 1e-8), dim=1)
+        switch_loss = torch.mean(switch_loss / (switch_loss + 1e-8), dim=1)
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.sum()
         print('{:4f}, {:4f}, {:4f}'.format(cat_loss.sum(), switch_loss.sum(), loss))
