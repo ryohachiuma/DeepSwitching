@@ -81,7 +81,7 @@ def run_epoch(dataset, mode='train'):
         num = imgs_np.shape[2] - 2 * fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         labels = tensor(labels_np, dtype=torch.long, device=device)[:, :, fr_margin:-fr_margin]
-        sw_labels = tensor(sw_labels_np, dtype=dtype, device=device)[:, :, fr_margin:-fr_margin]
+        sw_labels = tensor(sw_labels_np, dtype=dtype, device=device)[:, fr_margin:-fr_margin]
         prob_pred, indices_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
         indices_pred = indices_pred[:, fr_margin:-fr_margin]
