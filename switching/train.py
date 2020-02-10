@@ -104,7 +104,7 @@ def run_epoch(dataset, mode='train'):
         epoch_loss += loss.cpu() * num
         epoch_num_sample += num
         epoch_cat_loss += cat_loss.sum().cpu() * num
-        #epoch_switch_loss += switch_loss.sum().cpu() * num
+        epoch_switch_loss += switch_loss.sum().cpu() * num
         """clean up gpu memory"""
         torch.cuda.empty_cache()
         del imgs

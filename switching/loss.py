@@ -63,7 +63,7 @@ class SwitchingLoss(nn.Module):
         prev_indices_pred = preds_indices[:, :-1]
         next_indices_pred = preds_indices[:, 1: ]
         diff = torch.abs(next_indices_pred - prev_indices_pred)
-        switched = (diff / (diff + self.eps) - 1.0) - 1.0
+        switched = diff / (diff + self.eps) - 1.0
         switch_loss = gt_switch * switched ** 2 + (1.0 - gt_switch) * diff ** 2
         return switch_loss.mean(dim=1)
 
