@@ -92,7 +92,6 @@ def run_epoch(dataset, mode='train'):
         penalize that. This is just a regularization term."""
         switch_loss = switch_crit(indices_pred, sw_labels)
         loss = cat_loss + cfg.w_d * switch_loss
-        #loss = cat_loss
         loss = loss.mean()
         print('{:4f}, {:4f}, {:4f}'.format(loss, cat_loss.mean(), switch_loss.mean()))
         if mode == 'train':

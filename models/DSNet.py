@@ -27,7 +27,7 @@ class DSNet(nn.Module):
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
 
-    def soft_argmax(self, inputs, beta=10000, dim=1, epsilon=1e-12):
+    def soft_argmax(self, inputs, beta=10000, dim=1, epsilon=1e-8):
         '''
         applay softargmax on inputs, return \sum_i ( i * (exp(A_i * beta) / \sum_i(exp(A_i * beta))))
         according to https://bouthilx.wordpress.com/2013/04/21/a-soft-argmax/
@@ -36,8 +36,8 @@ class DSNet(nn.Module):
         :param epsilon:
         :return:
         '''
-        A_max = torch.max(inputs, dim=dim, keepdim=True)[0]
-        A_exp = torch.exp((inputs - A_max)*beta)
+        A_max = torch.max(inputs*beta, dim=dim, keepdim=True)[0]
+        A_exp = torch.exp(inputs*beta - A_max)
         A_softmax = A_exp / (torch.sum(A_exp, dim=dim, keepdim=True) + epsilon)
         indices = torch.arange(start=0, end=inputs.size()[dim], dtype=self.dtype, \
             device=self.device, requires_grad=True)

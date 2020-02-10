@@ -107,7 +107,6 @@ class Dataset:
 
     def convert_label_switch(self, take_ind, start, end):
         label = self.labels[take_ind][start:end]
-        res_label = []
         res_label = label[1:] == label[:-1]
         return res_label.astype(np.int64) # The first element contains switching is occured between frame 0 and 1.
  
