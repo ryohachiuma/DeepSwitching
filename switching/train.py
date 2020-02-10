@@ -91,8 +91,8 @@ def run_epoch(dataset, mode='train'):
         penalize that. This is just a regularization term."""
         switch_loss = switch_crit(indices_pred)
         loss = cat_loss + cfg.w_d * switch_loss
-        loss = loss.sum()
-        print('{:4f}, {:4f}, {:4f}'.format(cat_loss.sum(), switch_loss.sum(), loss))
+        loss = loss.mean()
+        print('{:4f}, {:4f}, {:4f}'.format(cat_loss.mean(), switch_loss.mean(), loss))
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
@@ -119,7 +119,7 @@ if args.mode == 'train':
     dsnet.train()
 
     """Dataset"""
-    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
+    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=300)
     val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=200)
     
     for i_epoch in range(args.iter, cfg.num_epoch):
