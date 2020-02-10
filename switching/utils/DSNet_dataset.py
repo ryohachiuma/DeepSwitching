@@ -29,7 +29,7 @@ class Dataset:
         
         if mode == 'train' or mode == 'val':
             self.takes = self.cfg.takes['train']
-            self.seq_len = [54170]
+            #self.seq_len = [54170]
             #self.seq_len = self.cfg.seq_len['train']
         else:
             self.takes = self.cfg.takes[mode]
@@ -44,6 +44,7 @@ class Dataset:
         self.fr_lb = None
         self.fr_ub = None
         self.im_offset = None
+        self.seq_len = []
 
         self.labels = []
         self.load_labels()
@@ -53,6 +54,7 @@ class Dataset:
             label_file = os.path.join(self.label_folder, take + '.csv')
             label = np.loadtxt(label_file, dtype=int, delimiter=',')[:, 1] # only load ground truth
             self.labels.append(label)
+            self.seq_len.append(label.shape)
 
 
     def __iter__(self):    
