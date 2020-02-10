@@ -120,7 +120,7 @@ if args.mode == 'train':
 
     """Dataset"""
     tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
-    val_dataset = Dataset(cfg, 'val', cfg.fr_num, cfg.camera_num,               1, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=200)
+    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=200)
     
     for i_epoch in range(args.iter, cfg.num_epoch):
         tr_loss, tr_cat_loss, tr_sw_loss = run_epoch(tr_dataset, mode='train')
