@@ -64,6 +64,7 @@ class Dataset:
             raise StopIteration
         labels = []
         imgs = []
+        sw_labels = []
         for _ in range(self.batch_size):
             self.sample_count += self.fr_num - self.overlap
             take_ind = np.random.randint(len(self.takes))
@@ -83,12 +84,13 @@ class Dataset:
 
             img = self.load_imgs(take_ind, fr_start, fr_end)
             label = self.convert_label(take_ind, fr_start, fr_end)
-            #label = self.convert_label_switch(take_ind, fr_start, fr_end)
+            switch_label = self.convert_label_switch(take_ind, fr_start, fr_end)
             imgs.append(img)
             labels.append(label)
+            sw_labels.append(switch_label)
 
         
-        return np.asarray(imgs), np.asarray(labels)
+        return np.asarray(imgs), np.asarray(labels), np.asarray(sw_labels)
 
     def convert_label(self, take_ind, start, end):
         label = self.labels[take_ind][start:end]

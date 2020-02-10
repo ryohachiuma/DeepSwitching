@@ -77,10 +77,11 @@ def run_epoch(dataset, mode='train'):
     img: (B, Cam, S, H, W, Channel)
     labels: (B, S - 1)
     """
-    for imgs_np, labels_np in dataset:
+    for imgs_np, labels_np, sw_labels_np in dataset:
         num = imgs_np.shape[2] - 2 * fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         labels = tensor(labels_np, dtype=torch.long, device=device)[:, :, fr_margin:-fr_margin]
+        sw_labels = tensor(sw_labels_np, dtype=dtype, device=device)[:, :, fr_margin:-fr_margin]
         prob_pred, indices_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
         indices_pred = indices_pred[:, fr_margin:-fr_margin]
@@ -89,9 +90,9 @@ def run_epoch(dataset, mode='train'):
         cat_loss = cat_crit(prob_pred.contiguous().view(-1, 2), labels.contiguous().view(-1,))
         """2. Switching loss: if the selected camera is different from the next frame, 
         penalize that. This is just a regularization term."""
-        #switch_loss = switch_crit(indices_pred)
-        #loss = cat_loss + cfg.w_d * switch_loss
-        loss = cat_loss
+        switch_loss = switch_crit(indices_pred, sw_labels)
+        loss = cat_loss + cfg.w_d * switch_loss
+        #loss = cat_loss
         loss = loss.mean()
         print('{:4f}'.format(loss))
         if mode == 'train':
