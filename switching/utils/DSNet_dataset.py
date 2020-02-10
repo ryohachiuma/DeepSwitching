@@ -82,8 +82,8 @@ class Dataset:
                 fr_end = fr_start + self.fr_num                
 
             img = self.load_imgs(take_ind, fr_start, fr_end)
-            #label = self.convert_label(take_ind, fr_start, fr_end)
-            label = self.convert_label_switch(take_ind, fr_start, fr_end)
+            label = self.convert_label(take_ind, fr_start, fr_end)
+            #label = self.convert_label_switch(take_ind, fr_start, fr_end)
             imgs.append(img)
             labels.append(label)
 
