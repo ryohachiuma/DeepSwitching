@@ -54,7 +54,7 @@ if args.iter > 0:
 
 dsnet.to(device)
 class_weights = torch.tensor([0.2, 0.8], dtype=dtype, device=device)
-ce_loss = nn.NLLLoss(weights=class_weights)
+ce_loss = nn.NLLLoss(weight=class_weights)
 
 
 if cfg.optimizer == 'Adam':
