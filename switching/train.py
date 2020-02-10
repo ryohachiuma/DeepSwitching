@@ -75,7 +75,7 @@ def run_epoch(dataset, mode='train'):
     epoch_switch_loss = 0
     """
     img: (B, Cam, S, H, W, Channel)
-    labels: (B, Cam, S)
+    labels: (B, S - 1)
     """
     for imgs_np, labels_np in dataset:
         num = imgs_np.shape[2] - 2 * fr_margin
@@ -105,6 +105,7 @@ def run_epoch(dataset, mode='train'):
         epoch_switch_loss += switch_loss.sum().cpu() * num
         """clean up gpu memory"""
         torch.cuda.empty_cache()
+        del imgs
 
     epoch_loss /= epoch_num_sample
     epoch_cat_loss /= epoch_num_sample
@@ -126,9 +127,11 @@ if args.mode == 'train':
         tr_loss, tr_cat_loss, tr_sw_loss = run_epoch(tr_dataset, mode='train')
         tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [tr_loss, tr_cat_loss, tr_sw_loss], i_epoch)
 
+        torch.cuda.empty_cache()
+
         val_loss, val_cat_loss, val_sw_loss = run_epoch(val_dataset, mode='val')
         tb_logger.scalar_summary(['val_loss', 'val_ce_loss', 'val_switch_loss'], [val_loss, val_cat_loss, val_sw_loss], i_epoch)
-
+        torch.cuda.empty_cache()
 
         with to_cpu(dsnet):
             if cfg.save_model_interval > 0 and (i_epoch + 1) % cfg.save_model_interval == 0:

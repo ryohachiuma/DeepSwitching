@@ -82,7 +82,8 @@ class Dataset:
                 fr_end = fr_start + self.fr_num                
 
             img = self.load_imgs(take_ind, fr_start, fr_end)
-            label = self.convert_label(take_ind, fr_start, fr_end)
+            #label = self.convert_label(take_ind, fr_start, fr_end)
+            label = self.convert_label_switch(take_ind, fr_start, fr_end)
             imgs.append(img)
             labels.append(label)
 
@@ -102,10 +103,15 @@ class Dataset:
         res_label = np.transpose(res_label)
         return np.asarray(res_label)
 
+    def convert_label_switch(self, take_ind, start, end):
+        label = self.labels[take_ind][start:end]
+        res_label = []
+        res_label = label[1:] == label[:-1]
+        return res_label
+
     def load_imgs(self, take_ind, start, end):
         take_folder = '%s/%s' % (self.image_folder, self.takes[take_ind])
         imgs_all = []
-
         for i in range(start, end):
             img_file = os.path.join(take_folder,'%06d.npy' % (i))
             imgs = np.load(img_file)
