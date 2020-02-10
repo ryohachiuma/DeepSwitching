@@ -60,15 +60,15 @@ class SwitchingLoss(nn.Module):
         self.eps=eps
 
     def forward(self, preds_indices):
-        prev_indices_pred = preds_indices[:, :-1]
-        next_indices_pred = preds_indices[:, 1: ]
+        prev_indices_pred = preds_indices[:, :-1].int()
+        next_indices_pred = preds_indices[:, 1: ].int()
         switch_loss = torch.abs(next_indices_pred - prev_indices_pred)
         switch_loss = torch.mean(switch_loss / (switch_loss + 1e-8), dim=1)   
         return switch_loss     
 
 if __name__ == "__main__":
     device = torch.device("cuda")
-
+    '''
     focal_without_onehot = FocalLossWithOutOneHot(gamma=1)
     focal_with_onehot = FocalLossWithOneHot(gamma=1)
     input = torch.Tensor([[0.3, 0.1, 0.1], [0.3, 0.6, 0.001], [0.01, 0.002, 2.3], [0.01, 0.002, 2.3]]).to(device)
@@ -77,3 +77,8 @@ if __name__ == "__main__":
     focal_without_onehot(input, target)
     # exception will occur when input and target are stored to GPU(s).
     focal_with_onehot(input, target)
+    '''
+
+    switch_loss = SwitchingLoss()
+    _indices = torch.Tensor([[1, 1, 1, 1, 1], [1, 1, 1, 1, 2], [1, 1, 2, 1, 1], [1, 1, 2, 1, 2], [1, 2, 1, 3, 1]])
+    print(switch_loss(_indices))
