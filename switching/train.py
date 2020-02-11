@@ -86,10 +86,9 @@ def run_epoch(dataset, mode='train'):
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
         indices_pred = indices_pred[:, fr_margin:-fr_margin]
 
-        """1. Categorical Loss (Inputs: after-softmax logits, Outputs: Label)"""
+        """1. Categorical Loss (Inputs: after-logsoftmax logits, Outputs: Label)"""
         cat_loss = cat_crit(prob_pred.contiguous().view(-1, 2), labels.contiguous().view(-1,))
-        """2. Switching loss: if the selected camera is different from the next frame, 
-        penalize that. This is just a regularization term."""
+        """2. Switching loss."""
         switch_loss = switch_crit(indices_pred, sw_labels)
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.mean()
@@ -104,6 +103,7 @@ def run_epoch(dataset, mode='train'):
         epoch_num_sample += num
         epoch_cat_loss += cat_loss.sum().cpu() * num
         epoch_switch_loss += switch_loss.sum().cpu() * num
+
         """clean up gpu memory"""
         torch.cuda.empty_cache()
         del imgs
@@ -129,6 +129,7 @@ if args.mode == 'train':
         tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [tr_loss, tr_cat_loss, tr_sw_loss], i_epoch)
 
         torch.cuda.empty_cache()
+        """TODO: Enable validation dataset (GPU memory is not enough but why?)"""
         '''
         val_loss, val_cat_loss, val_sw_loss = run_epoch(val_dataset, mode='val')
         tb_logger.scalar_summary(['val_loss', 'val_ce_loss', 'val_switch_loss'], [val_loss, val_cat_loss, val_sw_loss], i_epoch)

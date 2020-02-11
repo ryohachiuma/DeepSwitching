@@ -29,12 +29,8 @@ class Dataset:
         
         if mode == 'train' or mode == 'val':
             self.takes = self.cfg.takes['train']
-            #self.seq_len = [54170]
-            #self.seq_len = self.cfg.seq_len['train']
         else:
             self.takes = self.cfg.takes[mode]
-            self.seq_len = self.cfg.seq_len[mode]
-
         # iterator specific
         self.sample_count = None
         self.take_indices = None
@@ -82,7 +78,7 @@ class Dataset:
                 fr_lb = int(seq_len * self.split_ratio)
                 fr_ub = seq_len
                 fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
-                fr_end = fr_start + self.fr_num                
+                fr_end = fr_start + self.fr_num 
 
             img = self.load_imgs(take_ind, fr_start, fr_end)
             label = self.convert_label(take_ind, fr_start, fr_end)
