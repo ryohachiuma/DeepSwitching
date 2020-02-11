@@ -27,7 +27,7 @@ class DSNet(nn.Module):
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
 
-    def soft_argmax(self, inputs, beta=10000, dim=1, epsilon=1e-8):
+    def soft_argmax(self, inputs, beta=50000, dim=1, epsilon=1e-8):
         '''
         applay softargmax on inputs, return \sum_i ( i * (exp(A_i * beta) / \sum_i(exp(A_i * beta))))
         according to https://bouthilx.wordpress.com/2013/04/21/a-soft-argmax/
