@@ -50,7 +50,7 @@ class Dataset:
             label_file = os.path.join(self.label_folder, take + '.csv')
             label = np.loadtxt(label_file, dtype=int, delimiter=',')[:, 1] # only load ground truth
             self.labels.append(label)
-            self.seq_len.append(label.shape)
+            self.seq_len.append(len(label.tolist()))
 
 
     def __iter__(self):    
