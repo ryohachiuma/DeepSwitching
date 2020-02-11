@@ -6,10 +6,10 @@ cnn_fdim: 128
 lr: 1.e-4
 num_epoch: 500
 shuffle: true
-save_model_interval: 100
+save_model_interval: 20
 num_sample: 10000
 fr_margin: 3
 batch_size: 4
 bi_dir: true
 
-w_d: 0.01
+w_d: 0.00001
