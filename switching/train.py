@@ -147,6 +147,7 @@ elif args.mode == 'test':
     for imgs_np, labels_np, _ in dataset:
         if not take in take_start_ind:
             take_start_ind[take] = dataset.fr_lb + fr_margin
+            print(dataset.fr_lb + fr_margin)
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         prob_pred, _ = dsnet(imgs)
