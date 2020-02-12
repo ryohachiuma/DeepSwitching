@@ -67,7 +67,7 @@ class SelectKLLoss(nn.Module):
         select_probs = self.softmax(select_probs)
         prev_prob = select_probs[:, :-1, :].contiguous().view(-1, cam_num)
         next_prob = select_probs[:, 1: , :].contiguous().view(-1, cam_num)
-        kl_div = self.kldiv(torch.log(next_prob), prev_prob).view(-1, seq_num)
+        kl_div = self.kldiv(torch.log(next_prob), prev_prob).view(-1, seq_num - 1)
         switch_loss = (1.0 - self.switch_weight) * (1.0 - gt_switch) * kl_div - self.switch_weight * gt_switch * kl_div
         switch_loss = switch_loss ** 2
         return switch_loss.sum(dim=1)
