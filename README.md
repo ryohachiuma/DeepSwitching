@@ -39,7 +39,7 @@ python switching/train.py --cfg model_01
 ```
 TO resume the training from some iteration (iteration=500), run the script file below.
 ```
-python switching/train.y --cfg model_01 --iter 500
+python switching/train.py --cfg model_01 --iter 500
 ```
 
 ### Results
