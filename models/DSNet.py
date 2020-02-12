@@ -22,7 +22,7 @@ class DSNet(nn.Module):
         self.device = device
 
         self.v_net_type = v_net_type
-        self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
+        self.v_net = nn.LSTM(cnn_fdim, v_hdim // 2, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
         self.mlp = MLP(v_hdim * 2, mlp_dim, 'relu', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
@@ -104,7 +104,7 @@ class DSNet(nn.Module):
 
         return torch.log(logits.contiguous()), max_indices
     '''
-    
+
 if __name__ == '__main__':
     frame_num = 10
     camera_num = 3

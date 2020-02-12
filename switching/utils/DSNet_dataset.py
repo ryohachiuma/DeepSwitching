@@ -93,7 +93,7 @@ class Dataset:
             elif self.mode == 'val':
                 fr_lb = int(seq_len * self.split_ratio)
                 fr_ub = seq_len
-                
+
             fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
             fr_end = fr_start + self.fr_num 
 
@@ -137,6 +137,7 @@ class Dataset:
             for c in range(self.camera_num):
                 if l == c:
                     one_hot_label[c] = 1
+                    break
             res_label.append(one_hot_label)
         res_label = np.asarray(res_label)
         res_label = np.transpose(res_label) # Frame, Camera -> Camera, Frame
