@@ -8,13 +8,14 @@ import cv2
 
 class Dataset:
 
-    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000):
+    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, iter_method='sample', frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000):
         self.cfg = cfg
         self.mode = mode
         self.fr_num = fr_num
         self.shuffle = shuffle
         self.overlap = overlap
         self.num_sample = num_sample
+        self.iter_method = iter_method
         
         self.camera_num = camera_num
         self.frame_size = frame_size
@@ -27,7 +28,7 @@ class Dataset:
 
         # get take names
         
-        if mode == 'train' or mode == 'val':
+        if mode == 'train' or mode == 'val' or mode =='test':
             self.takes = self.cfg.takes['train']
         else:
             self.takes = self.cfg.takes[mode]
@@ -39,7 +40,6 @@ class Dataset:
         self.cur_fr = None
         self.fr_lb = None
         self.fr_ub = None
-        self.im_offset = None
         self.seq_len = []
 
         self.labels = []
@@ -53,13 +53,32 @@ class Dataset:
             self.seq_len.append(len(label.tolist()))
 
 
-    def __iter__(self):    
-        self.sample_count = 0
+    def __iter__(self):
+        if self.iter_method == 'sample':
+            self.sample_count = 0
+        elif self.iter_method == 'iter':
+            self.cur_ind = -1
+            self.take_indices = np.arange(len(self.takes))
+            if self.shuffle:
+                np.random.shuffle(self.take_indices)
+            self.__next_take()
         return self
 
-    def __next__(self):
-        if self.sample_count >= self.num_sample:
-            raise StopIteration
+    def __next_take(self):
+        self.cur_ind = self.cur_ind + 1
+        if self.cur_ind < len(self.take_indices):
+            self.cur_tid = self.take_indices[self.cur_ind]
+            _len = self.seq_len[self.cur_tid]
+            if self.mode == 'train':
+                self.fr_lb = 0
+                self.fr_ub = int(_len * self.split_ratio)
+            elif self.mode == 'val':
+                self.fr_lb = int(_len * self.split_ratio)
+                self.fr_ub = _len
+
+            self.cur_fr = self.fr_lb
+
+    def sample(self):
         labels = []
         imgs = []
         sw_labels = []
@@ -88,7 +107,29 @@ class Dataset:
             sw_labels.append(switch_label)
 
         
-        return np.asarray(imgs), np.asarray(labels), np.asarray(sw_labels)
+        return np.asarray(imgs), np.asarray(labels), np.asarray(sw_labels)        
+
+    def __next__(self):
+        if self.iter_method == 'sample':
+            if self.sample_count >= self.num_sample:
+                raise StopIteration
+            return self.sample()
+        elif self.iter_method == 'iter':
+            if self.cur_ind >= len(self.takes):
+                raise StopIteration
+
+            fr_start = self.cur_fr
+            fr_end = self.cur_fr + self.fr_num if self.cur_fr + self.fr_num + self.fr_num < self.fr_ub else self.fr_ub
+            img = self.load_imgs(self.cur_tid, fr_start, fr_end)
+            label = self.convert_label(self.cur_tid, fr_start, fr_end)
+            switch_label = self.convert_label_switch(self.cur_tid, fr_start, fr_end)
+            self.cur_fr = fr_end - self.overlap
+
+            if fr_end == self.fr_ub:
+                self.__next_take()
+        
+            return np.expand_dims(img, axis=0), np.expand_dims(label, axis=0), np.expand_dims(switch_label, axis=0)
+
 
     def convert_label(self, take_ind, start, end):
         label = self.labels[take_ind][start:end]
@@ -100,7 +141,7 @@ class Dataset:
                     one_hot_label[c] = 1
             res_label.append(one_hot_label)
         res_label = np.asarray(res_label)
-        res_label = np.transpose(res_label)
+        res_label = np.transpose(res_label) # Frame, Camera -> Camera, Frame
         return np.asarray(res_label)
 
     def convert_label_switch(self, take_ind, start, end):
@@ -117,8 +158,6 @@ class Dataset:
             imgs = np.rollaxis(imgs, 3, 1)
             imgs_all.append(imgs)
         imgs_all = np.asarray(imgs_all)
-        #print(imgs_all.shape)
         imgs_all = np.rollaxis(imgs_all, 0, 2)
-        #print(imgs_all.shape)
-        #assert imgs_all.shape == (self.camera_num, end-start,(self.frame_size))
+
         return imgs_all

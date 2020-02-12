@@ -66,19 +66,15 @@ else:
     optimizer = torch.optim.SGD(dsnet.parameters(), lr=cfg.lr, weight_decay=cfg.weightdecay)
 fr_margin = cfg.fr_margin
 
+i_iter = 0
 
 def run_epoch(dataset, mode='train'):
-    t0 = time.time()
-    epoch_num_sample = 0
-    epoch_loss = 0
-    epoch_cat_loss = 0
-    epoch_switch_loss = 0
     """
     img: (B, Cam, S, H, W, Channel)
-    labels: (B, S - 1)
+    sw_labels: (B, S - 1)
     """
     for imgs_np, labels_np, sw_labels_np in dataset:
-        num = imgs_np.shape[2] - 2 * fr_margin
+        t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         labels = tensor(labels_np, dtype=torch.long, device=device)[:, :, fr_margin:-fr_margin]
         sw_labels = tensor(sw_labels_np, dtype=dtype, device=device)[:, fr_margin:-fr_margin]
@@ -92,29 +88,22 @@ def run_epoch(dataset, mode='train'):
         switch_loss = switch_crit(indices_pred, sw_labels)
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.mean()
-        print('{:4f}, {:4f}, {:4f}'.format(loss, cat_loss.mean(), switch_loss.mean()))
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
         
-        # logging
-        epoch_loss += loss.cpu() * num
-        epoch_num_sample += num
-        epoch_cat_loss += cat_loss.sum().cpu() * num
-        epoch_switch_loss += switch_loss.sum().cpu() * num
+        logger.info('iter {:6d}    time {:.2f}    loss {:.4f} cat_loss {:.4f} sw_loss {:.4f}'
+                        .format(i_iter, time.time() - t0, loss, cat_loss.mean(), switch_loss.mean()))
+        tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [loss, cat_loss.mean(), switch_loss.mean()], i_iter)
 
+
+
+        i_iter+=1
         """clean up gpu memory"""
         torch.cuda.empty_cache()
-        del imgs
+        del imgs, labels, sw_labels
 
-    epoch_loss /= epoch_num_sample
-    epoch_cat_loss /= epoch_num_sample
-    epoch_switch_loss /= epoch_num_sample
-    logger.info('epoch {:4d}    time {:.2f}     nsample {}   loss {:.4f} cat_loss {:.4f} sw_loss {:.4f}'
-                    .format(i_epoch, time.time() - t0, epoch_num_sample, epoch_loss, epoch_cat_loss, epoch_switch_loss))
-
-    return epoch_loss, epoch_cat_loss, epoch_switch_loss
 
 
 if args.mode == 'train':
@@ -122,25 +111,56 @@ if args.mode == 'train':
 
     """Dataset"""
     tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
-    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=1000)
+    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', overlap=2*cfg.fr_margin)
     
-    for i_epoch in range(args.iter, cfg.num_epoch):
-        tr_loss, tr_cat_loss, tr_sw_loss = run_epoch(tr_dataset, mode='train')
-        tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [tr_loss, tr_cat_loss, tr_sw_loss], i_epoch)
+    for _ in range(args.iter, cfg.num_epoch):
+        #torch.set_grad_enabled(True)
+        run_epoch(tr_dataset, mode='train')
 
         torch.cuda.empty_cache()
         """TODO: Enable validation dataset (GPU memory is not enough but why?)"""
         '''
+        torch.set_grad_enabled(False)
         val_loss, val_cat_loss, val_sw_loss = run_epoch(val_dataset, mode='val')
         tb_logger.scalar_summary(['val_loss', 'val_ce_loss', 'val_switch_loss'], [val_loss, val_cat_loss, val_sw_loss], i_epoch)
         torch.cuda.empty_cache()
         '''
         with to_cpu(dsnet):
-            if cfg.save_model_interval > 0 and (i_epoch + 1) % cfg.save_model_interval == 0:
-                cp_path = '%s/iter_%04d.p' % (cfg.model_dir, i_epoch + 1)
+            if cfg.save_model_interval > 0 and i_iter % cfg.save_model_interval == 0:
+                cp_path = '%s/iter_%04d.p' % (cfg.model_dir, i_iter)
                 model_cp = {'ds_net': dsnet.state_dict()}
                 pickle.dump(model_cp, open(cp_path, 'wb'))
 
 elif args.mode == 'test':
     dsnet.eval()
-    print('test')
+    dataset = Dataset(cfg, 'val', cfg.fr_num,cfg.camera_num, 1, iter_method='iter', overlap=2*cfg.fr_margin)
+    torch.set_grad_enabled(False)
+
+    res_pred = {}
+    res_orig = {}
+    res_pred_arr = []
+    res_orig_arr = []
+    take = dataset.takes[0]
+    for imgs_np, labels_np, _ in dataset:
+        t0 = time.time()
+        imgs = tensor(imgs_np, dtype=dtype, device=device)
+        labels = tensor(labels_np[:, :, fr_margin:-fr_margin], dtype=torch.long, device=device)
+        prob_pred, indices_pred = dsnet(imgs)
+        prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].cpu().numpy()
+        select_prob = np.squeeze(prob_pred[:, :, :, 1])
+        select_ind = np.argmax(prob_pred, axis=0)
+        res_pred_arr.append(select_ind)
+
+        select_ind_gt = np.argmax(np.squeeze(labels_np), axis=0)
+        res_orig_arr.append(select_ind_gt)
+
+        if dataset.cur_ind >= len(dataset.takes) or dataset.takes[dataset.cur_tid] != take:
+            res_pred[take] = np.vstack(res_pred_arr)
+            res_orig[take] = np.vstack(res_orig_arr)
+            res_pred_arr, res_orig_arr = [], []
+            take = dataset.takes[dataset.cur_tid]
+
+    results = {'select_pred': res_pred, 'select_orig': res_orig}
+    res_path = '%s/iter_%04d.p' % (cfg.result_dir, args.iter)
+    pickle.dump((results, meta), open(res_path, 'wb'))
+    logger.info('saved results to %s' % res_path)
