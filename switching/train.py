@@ -97,6 +97,13 @@ def run_epoch(dataset, mode='train'):
             loss.backward()
             optimizer.step()
 
+            
+            if cfg.save_model_interval > 0 and _iter['train'] % cfg.save_model_interval == 0:
+                with to_cpu(dsnet):
+                    cp_path = '%s/iter_%04d.p' % (cfg.model_dir, _iter['train'])
+                    model_cp = {'ds_net': dsnet.state_dict()}
+                    pickle.dump(model_cp, open(cp_path, 'wb'))
+
         tb_logger.scalar_summary(loss_log[mode], [loss, cat_loss.mean(), switch_loss.mean()], _iter[mode])  
         logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} cat_loss {:.4f} sw_loss {:.4f}'
                         .format(_iter[mode], time.time() - t0, loss, cat_loss.mean(), switch_loss.mean()))
@@ -122,11 +129,7 @@ if args.mode == 'train':
         with torch.no_grad:
             run_epoch(val_dataset, mode='val')
 
-        with to_cpu(dsnet):
-            if cfg.save_model_interval > 0 and _iter['train'] % cfg.save_model_interval == 0:
-                cp_path = '%s/iter_%04d.p' % (cfg.model_dir, _iter['train'])
-                model_cp = {'ds_net': dsnet.state_dict()}
-                pickle.dump(model_cp, open(cp_path, 'wb'))
+
 
 
 elif args.mode == 'test':
