@@ -43,13 +43,13 @@ logger = create_logger(os.path.join(cfg.log_dir, 'log.txt'))
 
 
 if cfg.network == 'dsv1':
-    dsnet = DSNetv1(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, frame_num=cfg.fr_num, camera_num=cfg.camera_num, \
+    dsnet = DSNetv1(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
         v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
 elif cfg.network == 'dsv2':
-    dsnet = DSNetv2(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, frame_num=cfg.fr_num, camera_num=cfg.camera_num, \
+    dsnet = DSNetv2(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
         v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
 elif cfg.network == 'dsv3':
-    dsnet = DSNetv3(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, frame_num=cfg.fr_num, camera_num=cfg.camera_num, \
+    dsnet = DSNetv3(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
         v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)    
 """network"""
 
