@@ -87,9 +87,9 @@ class DSNet(nn.Module):
         #batch x cameraNum x framenum, v_hdimx2
         seq_features = self.v_net(cam_features)[0].view(-1, self.v_hdim * 2)
         #batch x cameraNum x framenum, mlp_dim[-1] 
-        cam_features = self.mlp(seq_features)
+        seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
-        logits = self.softmax(self.linear(cam_features)).view(-1, self.camera_num, self.frame_num, self.out_dim)
+        logits = self.softmax(self.linear(seq_features)).view(-1, self.camera_num, self.frame_num, self.out_dim)
         #batch, cameraNum, framenum
         select_prob = logits[:, :, :, 1] # 0: not selected, 1: selected
         #batch x self.frame_num, cameraNum
