@@ -22,6 +22,7 @@ from switching.utils.DSNet_config import Config
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', default='model_01')
 parser.add_argument('--mode', default='train')
+parser.add_argument('--data', default='train')
 parser.add_argument('--gpu-index', type=int, default=0)
 parser.add_argument('--iter', type=int, default=0)
 
@@ -132,7 +133,7 @@ if args.mode == 'train':
 
 elif args.mode == 'test':
     dsnet.eval()
-    dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, 1, iter_method='iter', overlap=2*cfg.fr_margin)
+    dataset = Dataset(cfg, args.data, cfg.fr_num, cfg.camera_num, 1, iter_method='iter', overlap=2*cfg.fr_margin)
     torch.set_grad_enabled(False)
 
     res_pred = {}
@@ -168,6 +169,6 @@ elif args.mode == 'test':
             take_start_ind[take] = dataset.fr_lb + fr_margin
 
     results = {'select_pred': res_pred, 'select_orig': res_orig, 'start_ind': take_start_ind}
-    res_path = '%s/iter_%04d.p' % (cfg.result_dir, args.iter)
+    res_path = '%s/iter_%04d_%s.p' % (cfg.result_dir, args.iter, args.data)
     pickle.dump(results, open(res_path, 'wb'))
     logger.info('saved results to %s' % res_path)
