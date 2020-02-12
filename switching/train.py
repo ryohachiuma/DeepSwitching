@@ -87,8 +87,6 @@ def run_epoch(dataset, mode='train'):
         indices_pred = indices_pred[:, fr_margin:-fr_margin]
 
         """1. Categorical Loss."""
-        print(prob_pred.size())
-        print(labels.size())
         cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
         """2. Switching loss."""
         switch_loss = switch_crit(indices_pred, sw_labels)
