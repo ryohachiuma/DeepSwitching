@@ -62,6 +62,7 @@ class SelectKLLoss(nn.Module):
         self.switch_weight = 0.9
 
     def forward(self, select_probs, gt_switch):
+        print(select_probs.size())
         seq_num = select_probs.size()[1]
         cam_num = select_probs.size()[2]
         select_probs = self.softmax(select_probs)
