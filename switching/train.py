@@ -132,7 +132,7 @@ if args.mode == 'train':
 
 elif args.mode == 'test':
     dsnet.eval()
-    dataset = Dataset(cfg, 'val', cfg.fr_num, cfg.camera_num, 1, iter_method='iter', overlap=2*cfg.fr_margin)
+    dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, 1, iter_method='iter', overlap=2*cfg.fr_margin)
     torch.set_grad_enabled(False)
 
     res_pred = {}
