@@ -22,7 +22,7 @@ class DSNet(nn.Module):
         self.device = device
 
         self.v_net_type = v_net_type
-        self.v_net = nn.LSTM(cnn_fdim, v_hdim // 2, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
+        self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
         self.mlp = MLP(v_hdim * 2, mlp_dim, 'relu', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
@@ -75,7 +75,36 @@ class DSNet(nn.Module):
 
         return torch.log(logits.contiguous()), max_indices
 
+    '''
+    def forward(self, inputs):
+        #batch x cameraNum, framenum, cnn_fdim
+        local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, self.frame_num, self.cnn_fdim))
+        #batch, cameraNum, framenum, cnn_fdim
+        local_feat = local_feat.contiguous().view(-1, self.camera_num, self.frame_num, self.cnn_fdim)
+        #batch, 1, framenum, cnn_fdim
+        glob_feat = torch.max(local_feat, 1, keepdim=True)[0]
+        #batch, cameraNum, framenum, cnn_fdim
+        glob_feat = glob_feat.repeat(1, self.camera_num, 1, 1)
+        #batch x cameraNum, framenum, cnn_fdimx2 
+        cam_features = torch.cat([local_feat, glob_feat], -1).view(-1, self.frame_num, self.cnn_fdim * 2)
+        #batch x cameraNum x framenum, v_hdimx2
+        seq_features, _ = self.v_net(cam_features).view(-1, self.v_hdim * 2)
+        #batch x cameraNum x framenum, mlp_dim[-1] 
+        cam_features = self.mlp(seq_features)
+        #batch, cameraNum, framenum, 2
+        logits = self.softmax(self.linear(cam_features)).view(-1, self.camera_num, self.frame_num, self.out_dim)
+        #batch, cameraNum, framenum
+        select_prob = logits[:, :, :, 1] # 0: not selected, 1: selected
+        #batch x self.frame_num, cameraNum
+        select_prob = select_prob.permute(0, 2, 1).contiguous().view(-1, self.camera_num)
+        #batch x self.frame_num
+        max_indices = self.soft_argmax(select_prob)
+        #batch, self.frame_num
+        max_indices = max_indices.view(-1, self.frame_num)
 
+        return torch.log(logits.contiguous()), max_indices
+    '''
+    
 if __name__ == '__main__':
     frame_num = 10
     camera_num = 3
