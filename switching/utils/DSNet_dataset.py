@@ -28,7 +28,7 @@ class Dataset:
 
         # get take names
         
-        if mode == 'train' or mode == 'val' or mode =='test':
+        if mode == 'train' or mode == 'val':
             self.takes = self.cfg.takes['train']
         else:
             self.takes = self.cfg.takes[mode]
@@ -72,8 +72,11 @@ class Dataset:
             if self.mode == 'train':
                 self.fr_lb = 0
                 self.fr_ub = int(_len * self.split_ratio)
-            else:
+            elif self.mode == 'val':
                 self.fr_lb = int(_len * self.split_ratio)
+                self.fr_ub = _len
+            elif self.mode == 'test':
+                self.fr_lb = 0
                 self.fr_ub = _len
 
             self.cur_fr = self.fr_lb
@@ -92,6 +95,9 @@ class Dataset:
                 fr_ub = int(seq_len * self.split_ratio)
             elif self.mode == 'val':
                 fr_lb = int(seq_len * self.split_ratio)
+                fr_ub = seq_len
+            elif self.mode == 'test':
+                fr_lb = 0
                 fr_ub = seq_len
 
             fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
