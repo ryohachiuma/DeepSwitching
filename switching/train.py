@@ -102,6 +102,7 @@ def run_epoch(dataset, mode='train'):
             indices_pred = indices_pred[:, fr_margin:-fr_margin]
             switch_loss = switch_crit(indices_pred, sw_labels)
         else:
+            indices_pred = indices_pred[:, fr_margin:-fr_margin, :]
             switch_loss = kl_crit(indices_pred, sw_labels)
             print('not finished')
         loss = cat_loss + cfg.w_d * switch_loss

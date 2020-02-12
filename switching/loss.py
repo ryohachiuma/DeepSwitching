@@ -58,18 +58,16 @@ class SelectKLLoss(nn.Module):
         super(SelectKLLoss, self).__init__()
         self.eps=eps
         self.softmax = nn.Softmax(dim=2)
-        self.kldiv = nn.KLDivLoss(reduction='sum')
+        self.kldiv = nn.KLDivLoss(reduction='none')
         self.switch_weight = 0.9
 
     def forward(self, select_probs, gt_switch):
-        print(select_probs.size())
         seq_num = select_probs.size()[1]
         cam_num = select_probs.size()[2]
         select_probs = self.softmax(select_probs)
         prev_prob = select_probs[:, :-1, :].contiguous().view(-1, cam_num)
         next_prob = select_probs[:, 1: , :].contiguous().view(-1, cam_num)
-        kl_div = self.kldiv(torch.log(next_prob), prev_prob)
-        print(kl)
+        kl_div = self.kldiv(torch.log(next_prob), prev_prob).sum(dim=1).view(-1, seq_num - 1)
         switch_loss = (1.0 - self.switch_weight) * (1.0 - gt_switch) * kl_div - self.switch_weight * gt_switch * kl_div
         switch_loss = switch_loss ** 2
         return switch_loss.sum(dim=1)
