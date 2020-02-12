@@ -100,7 +100,7 @@ class DSNet(nn.Module):
         max_indices = max_indices.view(-1, self.frame_num)
 
         return torch.log(logits.contiguous()), max_indices
-    '''
+    
 
 if __name__ == '__main__':
     frame_num = 10
