@@ -131,8 +131,8 @@ if args.mode == 'train':
     dsnet.train()
 
     """Dataset"""
-    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=2000)
-    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', split_ratio=0.9, overlap=2*cfg.fr_margin)
+    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
+    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', split_ratio=0.95, overlap=2*cfg.fr_margin)
     
     for _ in range(args.iter, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
@@ -145,7 +145,7 @@ if args.mode == 'train':
 
 elif args.mode == 'test':
     dsnet.eval()
-    dataset = Dataset(cfg, args.data, cfg.fr_num, cfg.camera_num, 1, iter_method='iter', split_ratio=0.99, overlap=2*cfg.fr_margin)
+    dataset = Dataset(cfg, args.data, cfg.fr_num, cfg.camera_num, 1, iter_method='iter', overlap=2*cfg.fr_margin)
     torch.set_grad_enabled(False)
 
     res_pred = {}
@@ -157,10 +157,8 @@ elif args.mode == 'test':
     take = dataset.takes[0]
     #take_start_ind[take] = dataset.fr_lb + fr_margin
     for imgs_np, labels_np, _ in dataset:
-        print(dataset.cur_fr)
         if not take in take_start_ind:
             take_start_ind[take] = dataset.fr_lb + fr_margin
-            print(dataset.fr_lb + fr_margin)
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         prob_pred, _ = dsnet(imgs)
@@ -172,10 +170,7 @@ elif args.mode == 'test':
 
         select_ind_gt = np.argmax(np.squeeze(labels_np[:, :, fr_margin:-fr_margin]), axis=0)
         res_orig_arr.append(select_ind_gt)
-        print('pred')
-        print(select_ind)
-        print('gt')
-        print(select_ind_gt)
+
 
         if dataset.cur_ind >= len(dataset.takes) or dataset.takes[dataset.cur_tid] != take:
             res_pred[take] = np.concatenate(res_pred_arr)
