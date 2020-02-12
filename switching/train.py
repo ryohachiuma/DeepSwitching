@@ -55,8 +55,6 @@ if args.iter > 0:
 
 dsnet.to(device)
 class_weights = torch.tensor([0.2, 0.8], dtype=dtype, device=device)
-ce_loss = nn.NLLLoss(weight=class_weights)
-#cat_crit = loss.FocalLossWithOutOneHot()
 cat_crit = nn.NLLLoss(weight=class_weights)
 switch_crit = loss.SwitchingLoss()
 
@@ -69,6 +67,7 @@ fr_margin = cfg.fr_margin
 
 logger_str = {'train': "Training: ", 'val': "Validation: "}
 _iter = {'train': 0, 'val': 0}
+loss_log = {'train': ['loss', 'ce_loss', 'switch_loss'], 'val': ['val_loss', 'val_ce_loss', 'val_switch_loss']}
 
 def run_epoch(dataset, mode='train'):
     """
@@ -93,25 +92,17 @@ def run_epoch(dataset, mode='train'):
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.mean()
 
-        
-
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [loss, cat_loss.mean(), switch_loss.mean()], _iter['train'])
 
-        else:
-            tb_logger.scalar_summary(['val_loss', 'val_ce_loss', 'val_switch_loss'], [loss, cat_loss.mean(), switch_loss.mean()], _iter['val'])          
-
-
+        tb_logger.scalar_summary(loss_log[mode], [loss, cat_loss.mean(), switch_loss.mean()], _iter[mode])  
         logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} cat_loss {:.4f} sw_loss {:.4f}'
                         .format(_iter[mode], time.time() - t0, loss, cat_loss.mean(), switch_loss.mean()))
         _iter[mode]+=1
 
 
-
-        
         """clean up gpu memory"""
         torch.cuda.empty_cache()
         del imgs, labels, sw_labels
@@ -127,11 +118,9 @@ if args.mode == 'train':
     
     for _ in range(args.iter, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
-        torch.cuda.empty_cache()
 
         with torch.no_grad:
             run_epoch(val_dataset, mode='val')
-            torch.cuda.empty_cache()
 
         with to_cpu(dsnet):
             if cfg.save_model_interval > 0 and _iter['train'] % cfg.save_model_interval == 0:
