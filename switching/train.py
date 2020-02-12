@@ -149,7 +149,7 @@ elif args.mode == 'test':
         prob_pred, _ = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].cpu().numpy()
         select_prob = np.squeeze(prob_pred[:, :, :, 1])
-        select_ind = np.argmax(prob_pred, axis=0)
+        select_ind = np.argmax(select_prob, axis=0)
         print(select_ind)
         res_pred_arr.append(select_ind)
 
