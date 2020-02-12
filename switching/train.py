@@ -142,7 +142,7 @@ elif args.mode == 'test':
     res_orig_arr = []
     meta_start_arr = []
     take = dataset.takes[0]
-    take_start_ind[take] = dataset.fr_lb + fr_margin
+    #take_start_ind[take] = dataset.fr_lb + fr_margin
     for imgs_np, labels_np, _ in dataset:
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
