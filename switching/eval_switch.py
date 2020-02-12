@@ -39,7 +39,7 @@ if args.mode == 'vis':
     for take in cfg.takes[args.data]:
         out_movie_path = '%s/%s/results/%s_iter_%04d_%s.mp4' % (res_base_dir, args.cfg, take, args.iter, args.show_type)
         select_pred = sr_res['select_pred'][take]
-        select_gt = sr_res['select_gt'][take]
+        select_gt = sr_res['select_orig'][take]
         start_ind = sr_res['start_ind'][take]
 
 
