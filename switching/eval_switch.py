@@ -26,7 +26,7 @@ args = parser.parse_args()
 
 cfg = Config(args.cfg)
 res_base_dir = 'results'
-sr_res_path = '%s/%s/results/iter_%04d.p' % (res_base_dir, args.cfg, args.iter)
+sr_res_path = '%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, args.iter, args.data)
 sr_res, sr_meta = pickle.load(open(sr_res_path, 'rb'))
 
 
