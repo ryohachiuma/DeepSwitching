@@ -119,13 +119,13 @@ if args.mode == 'train':
     dsnet.train()
 
     """Dataset"""
-    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
+    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=2000)
     val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', overlap=2*cfg.fr_margin)
     
     for _ in range(args.iter, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
 
-        with torch.no_grad:
+        with torch.no_grad():
             run_epoch(val_dataset, mode='val')
 
 

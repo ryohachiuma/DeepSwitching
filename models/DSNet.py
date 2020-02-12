@@ -22,8 +22,8 @@ class DSNet(nn.Module):
         self.device = device
 
         self.v_net_type = v_net_type
-        self.v_net = nn.LSTM(cnn_fdim, v_hdim // 2, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
-        #self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
+        #self.v_net = nn.LSTM(cnn_fdim, v_hdim // 2, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
+        self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
         self.mlp = MLP(v_hdim * 2, mlp_dim, 'relu', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
@@ -43,7 +43,7 @@ class DSNet(nn.Module):
         indices = torch.arange(start=0, end=inputs.size()[dim], dtype=self.dtype, \
             device=self.device, requires_grad=True)
         return torch.matmul(A_softmax, indices)
-    
+    '''
     def forward(self, inputs):
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, self.frame_num, self.cnn_fdim))
@@ -100,7 +100,7 @@ class DSNet(nn.Module):
         max_indices = max_indices.view(-1, self.frame_num)
 
         return torch.log(logits), max_indices
-    '''
+    
 
 if __name__ == '__main__':
     frame_num = 10
