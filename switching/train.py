@@ -65,6 +65,7 @@ dsnet.to(device)
 class_weights = torch.tensor([0.2, 0.8], dtype=dtype, device=device)
 cat_crit = nn.NLLLoss(weight=class_weights)
 switch_crit = loss.SwitchingLoss()
+kl_crit = loss.SelectKLLoss()
 
 if cfg.optimizer == 'Adam':
     optimizer = torch.optim.Adam(dsnet.parameters(), lr=cfg.lr, weight_decay=cfg.weightdecay)
@@ -101,6 +102,7 @@ def run_epoch(dataset, mode='train'):
             indices_pred = indices_pred[:, fr_margin:-fr_margin]
             switch_loss = switch_crit(indices_pred, sw_labels)
         else:
+            switch_loss = kl_crit(indices_pred, sw_labels)
             print('not finished')
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.mean()
