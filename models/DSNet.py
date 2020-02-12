@@ -114,6 +114,7 @@ class DSNetv2(nn.Module):
     
     def forward(self, inputs):
         fr_num = inputs.size()[1]
+        print(fr_num)
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, fr_num , self.cnn_fdim))
         #batch x cameraNum, framenum, v_hdim
