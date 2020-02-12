@@ -27,7 +27,7 @@ args = parser.parse_args()
 cfg = Config(args.cfg)
 res_base_dir = 'results'
 sr_res_path = '%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, args.iter, args.data)
-sr_res, sr_meta = pickle.load(open(sr_res_path, 'rb'))
+sr_res = pickle.load(open(sr_res_path, 'rb'))
 
 
 
@@ -40,7 +40,7 @@ if args.mode == 'vis':
         out_movie_path = '%s/%s/results/%s_iter_%04d_%s.mp4' % (res_base_dir, args.cfg, take, args.iter, args.show_type)
         select_pred = sr_res['select_pred'][take]
         select_gt = sr_res['select_gt'][take]
-        start_ind = sr_meta['start_ind'][take]
+        start_ind = sr_res['start_ind'][take]
 
 
         fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
