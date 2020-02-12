@@ -150,11 +150,13 @@ elif args.mode == 'test':
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].cpu().numpy()
         select_prob = np.squeeze(prob_pred[:, :, :, 1])
         select_ind = np.argmax(select_prob, axis=0)
-        print(select_ind)
+        
         res_pred_arr.append(select_ind)
 
         select_ind_gt = np.argmax(np.squeeze(labels_np[:, :, fr_margin:-fr_margin]), axis=0)
         res_orig_arr.append(select_ind_gt)
+        print('pred: ' + select_ind)
+        print('gt: ' + select_ind_gt)
 
         if dataset.cur_ind >= len(dataset.takes) or dataset.takes[dataset.cur_tid] != take:
             res_pred[take] = np.vstack(res_pred_arr)
