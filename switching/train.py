@@ -83,7 +83,7 @@ def run_epoch(dataset, mode='train'):
         sw_labels = tensor(sw_labels_np[:, fr_margin:-fr_margin], dtype=dtype, device=device)
 
         prob_pred, indices_pred = dsnet(imgs)
-        prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
+        prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].contiguous()
         indices_pred = indices_pred[:, fr_margin:-fr_margin]
 
         """1. Categorical Loss."""
