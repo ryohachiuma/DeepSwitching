@@ -54,8 +54,8 @@ if args.mode == 'vis':
             img_file = os.path.join(raw_img_dir, take, '%06d.jpg' % (start_ind + ind))
             img = cv2.imread(img_file)
             img_size = img.shape[0]
-            pred_img = img[:, img_size*pred:img_size(pred+1), :]
-            gt_img   = img[:, img_size*gt:img_size(gt+1), :]
+            pred_img = img[:, img_size*pred:img_size*(pred+1), :]
+            gt_img   = img[:, img_size*gt:img_size*(gt+1), :]
 
             if args.show_type == 'compare':
                 res_img = cv2.hconcat([pred_img, gt_img])
@@ -65,3 +65,9 @@ if args.mode == 'vis':
 
 elif args.mode =='stats':
     print('stat')
+    for take in cfg.takes[args.data]:
+        select_pred = sr_res['select_pred'][take]
+        select_gt = sr_res['select_orig'][take]
+        start_ind = sr_res['start_ind'][take]
+
+        print('take %s Accuracy: %.4f' % (take, np.count_nonzero(select_pred == select_gt) / float(select_gt.shape[0])))
