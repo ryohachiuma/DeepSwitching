@@ -145,6 +145,7 @@ elif args.mode == 'test':
     take = dataset.takes[0]
     #take_start_ind[take] = dataset.fr_lb + fr_margin
     for imgs_np, labels_np, _ in dataset:
+        print(dataset.cur_fr)
         if not take in take_start_ind:
             take_start_ind[take] = dataset.fr_lb + fr_margin
             print(dataset.fr_lb + fr_margin)

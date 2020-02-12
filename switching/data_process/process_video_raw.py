@@ -50,7 +50,7 @@ for i in tqdm(range(frame_num)):
         frame = frame[:,:,::-1]
         frame = (frame - IMG_MEAN) / IMG_STD
         imgs.append(frame)
-    #cv2.imwrite(out_file_raw, cv2.hconcat(imgs_raw))
+    cv2.imwrite(out_file_raw, cv2.hconcat(imgs_raw))
     imgs = np.asarray(imgs) # Cam, H, W, Channel
     np.save(out_file, imgs)
         
