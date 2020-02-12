@@ -72,7 +72,7 @@ class Dataset:
             if self.mode == 'train':
                 self.fr_lb = 0
                 self.fr_ub = int(_len * self.split_ratio)
-            elif self.mode == 'val':
+            else:
                 self.fr_lb = int(_len * self.split_ratio)
                 self.fr_ub = _len
 
