@@ -42,10 +42,17 @@ tb_logger = Logger(cfg.tb_dir)
 logger = create_logger(os.path.join(cfg.log_dir, 'log.txt'))
 
 
-
+if cfg.network == 'dsv1':
+    dsnet = DSNetv1(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, frame_num=cfg.fr_num, camera_num=cfg.camera_num, \
+        v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
+elif cfg.network == 'dsv2':
+    dsnet = DSNetv2(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, frame_num=cfg.fr_num, camera_num=cfg.camera_num, \
+        v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
+elif cfg.network == 'dsv3':
+    dsnet = DSNetv3(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, frame_num=cfg.fr_num, camera_num=cfg.camera_num, \
+        v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)    
 """network"""
-dsnet = DSNet(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, frame_num=cfg.fr_num, camera_num=cfg.camera_num, \
-    v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
+
 
 
 if args.iter > 0:
@@ -83,13 +90,18 @@ def run_epoch(dataset, mode='train'):
         sw_labels = tensor(sw_labels_np[:, fr_margin:-fr_margin], dtype=dtype, device=device)
 
         prob_pred, indices_pred = dsnet(imgs)
-        prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].contiguous()
-        indices_pred = indices_pred[:, fr_margin:-fr_margin]
-
+        
         """1. Categorical Loss."""
+        prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].contiguous()
         cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
+
+
         """2. Switching loss."""
-        switch_loss = switch_crit(indices_pred, sw_labels)
+        if cfg.network != 'dsv3':
+            indices_pred = indices_pred[:, fr_margin:-fr_margin]
+            switch_loss = switch_crit(indices_pred, sw_labels)
+        else:
+
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.mean()
 
@@ -120,7 +132,7 @@ if args.mode == 'train':
 
     """Dataset"""
     tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=2000)
-    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', overlap=2*cfg.fr_margin)
+    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', split_ratio=0.9, overlap=2*cfg.fr_margin)
     
     for _ in range(args.iter, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
@@ -133,7 +145,7 @@ if args.mode == 'train':
 
 elif args.mode == 'test':
     dsnet.eval()
-    dataset = Dataset(cfg, args.data, cfg.fr_num, cfg.camera_num, 1, iter_method='iter', split_ratio=0.95, overlap=2*cfg.fr_margin)
+    dataset = Dataset(cfg, args.data, cfg.fr_num, cfg.camera_num, 1, iter_method='iter', split_ratio=0.98, overlap=2*cfg.fr_margin)
     torch.set_grad_enabled(False)
 
     res_pred = {}

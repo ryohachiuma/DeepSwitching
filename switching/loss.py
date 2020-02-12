@@ -53,6 +53,13 @@ class FocalLossWithOutOneHot(nn.Module):
 
         return loss
 
+class SelectKLLoss(nn.Module):
+    def __init__(self, eps=1e-8):
+        super(SelectKLLoss, self).__init__()
+        self.eps=eps
+    def forward(self, select_probs, gt_switch):
+        prev_indices_pred = select_probs[:, :-1]
+        next_indices_pred = select_probs[:, 1: ] 
 
 class SwitchingLoss(nn.Module):
     def __init__(self, eps=1e-8):

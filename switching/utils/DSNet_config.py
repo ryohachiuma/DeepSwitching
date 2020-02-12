@@ -31,6 +31,7 @@ class Config:
             recreate_dirs(self.log_dir, self.tb_dir)
 
         self.seed = cfg['seed']
+        self.network = cfg['network']
         self.fr_num = cfg.get('fr_num', 20)
         self.v_net_param = cfg.get('v_net_param', None)
         self.v_hdim = cfg['v_hdim']
