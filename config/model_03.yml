@@ -13,4 +13,4 @@ fr_margin: 3
 batch_size: 2
 bi_dir: true
 
-w_d: 1.e-3
+w_d: 10.0

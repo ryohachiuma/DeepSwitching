@@ -104,7 +104,6 @@ def run_epoch(dataset, mode='train'):
         else:
             indices_pred = indices_pred[:, fr_margin:-fr_margin, :]
             switch_loss = kl_crit(indices_pred, sw_labels)
-            print('not finished')
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.mean()
 
@@ -119,7 +118,7 @@ def run_epoch(dataset, mode='train'):
                     pickle.dump(model_cp, open(cp_path, 'wb'))
 
         tb_logger.scalar_summary(loss_log[mode], [loss, cat_loss.mean(), switch_loss.mean()], _iter[mode])  
-        logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} cat_loss {:.4f} sw_loss {:.4f}'
+        logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} cat_loss {:.4f} sw_loss {:.6f}'
                         .format(_iter[mode], time.time() - t0, loss, cat_loss.mean(), switch_loss.mean()))
         _iter[mode]+=1
 
