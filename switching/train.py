@@ -66,40 +66,52 @@ else:
     optimizer = torch.optim.SGD(dsnet.parameters(), lr=cfg.lr, weight_decay=cfg.weightdecay)
 fr_margin = cfg.fr_margin
 
-i_iter = 0
+
+logger_str = {'train': "Training: ", 'val': "Validation: "}
+_iter = {'train': 0, 'val': 0}
 
 def run_epoch(dataset, mode='train'):
     """
     img: (B, Cam, S, H, W, Channel)
+    labels: (B, Cam, S)
     sw_labels: (B, S - 1)
     """
     for imgs_np, labels_np, sw_labels_np in dataset:
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
-        labels = tensor(labels_np, dtype=torch.long, device=device)[:, :, fr_margin:-fr_margin]
-        sw_labels = tensor(sw_labels_np, dtype=dtype, device=device)[:, fr_margin:-fr_margin]
+        labels = tensor(labels_np[:, :, fr_margin:-fr_margin], dtype=torch.long, device=device)
+        sw_labels = tensor(sw_labels_np[:, fr_margin:-fr_margin], dtype=dtype, device=device)
+
         prob_pred, indices_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :]
         indices_pred = indices_pred[:, fr_margin:-fr_margin]
 
-        """1. Categorical Loss (Inputs: after-logsoftmax logits, Outputs: Label)"""
+        """1. Categorical Loss."""
         cat_loss = cat_crit(prob_pred.contiguous().view(-1, 2), labels.contiguous().view(-1,))
         """2. Switching loss."""
         switch_loss = switch_crit(indices_pred, sw_labels)
         loss = cat_loss + cfg.w_d * switch_loss
         loss = loss.mean()
+
+        
+
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [loss, cat_loss.mean(), switch_loss.mean()], _iter['train'])
+
+        else:
+            tb_logger.scalar_summary(['val_loss', 'val_ce_loss', 'val_switch_loss'], [loss, cat_loss.mean(), switch_loss.mean()], _iter['val'])          
+
+
+        logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} cat_loss {:.4f} sw_loss {:.4f}'
+                        .format(_iter[mode], time.time() - t0, loss, cat_loss.mean(), switch_loss.mean()))
+        _iter[mode]+=1
+
+
+
         
-        logger.info('iter {:6d}    time {:.2f}    loss {:.4f} cat_loss {:.4f} sw_loss {:.4f}'
-                        .format(i_iter, time.time() - t0, loss, cat_loss.mean(), switch_loss.mean()))
-        tb_logger.scalar_summary(['loss', 'ce_loss', 'switch_loss'], [loss, cat_loss.mean(), switch_loss.mean()], i_iter)
-
-
-
-        i_iter+=1
         """clean up gpu memory"""
         torch.cuda.empty_cache()
         del imgs, labels, sw_labels
@@ -111,25 +123,22 @@ if args.mode == 'train':
 
     """Dataset"""
     tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
-    #val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', overlap=2*cfg.fr_margin)
+    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', overlap=2*cfg.fr_margin)
     
     for _ in range(args.iter, cfg.num_epoch):
-        #torch.set_grad_enabled(True)
         run_epoch(tr_dataset, mode='train')
+        torch.cuda.empty_cache()
 
-        torch.cuda.empty_cache()
-        """TODO: Enable validation dataset (GPU memory is not enough but why?)"""
-        '''
-        torch.set_grad_enabled(False)
-        val_loss, val_cat_loss, val_sw_loss = run_epoch(val_dataset, mode='val')
-        tb_logger.scalar_summary(['val_loss', 'val_ce_loss', 'val_switch_loss'], [val_loss, val_cat_loss, val_sw_loss], i_epoch)
-        torch.cuda.empty_cache()
-        '''
+        with torch.no_grad:
+            run_epoch(val_dataset, mode='val')
+            torch.cuda.empty_cache()
+
         with to_cpu(dsnet):
-            if cfg.save_model_interval > 0 and i_iter % cfg.save_model_interval == 0:
-                cp_path = '%s/iter_%04d.p' % (cfg.model_dir, i_iter)
+            if cfg.save_model_interval > 0 and _iter['train'] % cfg.save_model_interval == 0:
+                cp_path = '%s/iter_%04d.p' % (cfg.model_dir, _iter['train'])
                 model_cp = {'ds_net': dsnet.state_dict()}
                 pickle.dump(model_cp, open(cp_path, 'wb'))
+
 
 elif args.mode == 'test':
     dsnet.eval()

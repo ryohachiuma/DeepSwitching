@@ -90,14 +90,12 @@ class Dataset:
             if self.mode == 'train':
                 fr_lb = 0
                 fr_ub = int(seq_len * self.split_ratio)
-                fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
-                fr_end = fr_start + self.fr_num
-
             elif self.mode == 'val':
                 fr_lb = int(seq_len * self.split_ratio)
                 fr_ub = seq_len
-                fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
-                fr_end = fr_start + self.fr_num 
+                
+            fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
+            fr_end = fr_start + self.fr_num 
 
             img = self.load_imgs(take_ind, fr_start, fr_end)
             label = self.convert_label(take_ind, fr_start, fr_end)
