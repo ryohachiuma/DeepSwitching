@@ -145,7 +145,7 @@ if args.mode == 'train':
 
 elif args.mode == 'test':
     dsnet.eval()
-    dataset = Dataset(cfg, args.data, cfg.fr_num, cfg.camera_num, 1, iter_method='iter', split_ratio=0.98, overlap=2*cfg.fr_margin)
+    dataset = Dataset(cfg, args.data, cfg.fr_num, cfg.camera_num, 1, iter_method='iter', split_ratio=0.99, overlap=2*cfg.fr_margin)
     torch.set_grad_enabled(False)
 
     res_pred = {}
@@ -178,8 +178,8 @@ elif args.mode == 'test':
         print(select_ind_gt)
 
         if dataset.cur_ind >= len(dataset.takes) or dataset.takes[dataset.cur_tid] != take:
-            res_pred[take] = np.vstack(res_pred_arr)
-            res_orig[take] = np.vstack(res_orig_arr)
+            res_pred[take] = np.concatenate(res_pred_arr)
+            res_orig[take] = np.concatenate(res_orig_arr)
             res_pred_arr, res_orig_arr = [], []
             take = dataset.takes[dataset.cur_tid]
             take_start_ind[take] = dataset.fr_lb + fr_margin

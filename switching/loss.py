@@ -57,9 +57,21 @@ class SelectKLLoss(nn.Module):
     def __init__(self, eps=1e-8):
         super(SelectKLLoss, self).__init__()
         self.eps=eps
+        self.softmax = nn.Softmax(dim=2)
+        self.kldiv = nn.KLDivLoss(reduction='none')
+        self.switch_weight = 0.9
+
     def forward(self, select_probs, gt_switch):
-        prev_indices_pred = select_probs[:, :-1]
-        next_indices_pred = select_probs[:, 1: ] 
+        seq_num = select_probs.size()[1]
+        cam_num = select_probs.size()[2]
+        select_probs = self.softmax(select_probs.contiguous())
+        prev_prob = select_probs[:, :-1, :].view(-1, cam_num)
+        next_prob = select_probs[:, 1: , :].view(-1, cam_num)
+        kl_div = self.kldiv(torch.log(next_prob), prev_prob).view(-1, seq_num)
+        switch_loss = (1.0 - self.switch_weight) * (1.0 - gt_switch) * kl_div - self.switch_weight * gt_switch * kl_div
+        switch_loss = switch_loss ** 2
+        return switch_loss.sum(dim=1)
+
 
 class SwitchingLoss(nn.Module):
     def __init__(self, eps=1e-8):

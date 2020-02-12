@@ -45,7 +45,7 @@ class DSNetv1(nn.Module):
         return torch.matmul(A_softmax, indices)
 
     def forward(self, inputs):
-        fr_num = inputs.size()[1]
+        fr_num = inputs.size()[2]
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, fr_num, self.cnn_fdim))
         #batch, cameraNum, framenum, cnn_fdim
@@ -114,7 +114,6 @@ class DSNetv2(nn.Module):
     
     def forward(self, inputs):
         fr_num = inputs.size()[2]
-        print(fr_num)
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, fr_num, self.cnn_fdim))
         #batch x cameraNum, framenum, v_hdim
@@ -164,7 +163,7 @@ class DSNetv3(nn.Module):
 
 
     def forward(self, inputs):
-        fr_num = inputs.size()[1]
+        fr_num = inputs.size()[2]
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, fr_num, self.cnn_fdim))
         #batch, cameraNum, framenum, cnn_fdim
