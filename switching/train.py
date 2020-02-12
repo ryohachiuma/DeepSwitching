@@ -111,7 +111,7 @@ if args.mode == 'train':
 
     """Dataset"""
     tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
-    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', overlap=2*cfg.fr_margin)
+    #val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', overlap=2*cfg.fr_margin)
     
     for _ in range(args.iter, cfg.num_epoch):
         #torch.set_grad_enabled(True)
@@ -133,19 +133,21 @@ if args.mode == 'train':
 
 elif args.mode == 'test':
     dsnet.eval()
-    dataset = Dataset(cfg, 'val', cfg.fr_num,cfg.camera_num, 1, iter_method='iter', overlap=2*cfg.fr_margin)
+    dataset = Dataset(cfg, 'val', cfg.fr_num, cfg.camera_num, 1, iter_method='iter', overlap=2*cfg.fr_margin)
     torch.set_grad_enabled(False)
 
     res_pred = {}
     res_orig = {}
+    take_start_ind = {}
     res_pred_arr = []
     res_orig_arr = []
+    meta_start_arr = []
     take = dataset.takes[0]
+    take_start_ind[take] = dataset.fr_lb + fr_margin
     for imgs_np, labels_np, _ in dataset:
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
-        labels = tensor(labels_np[:, :, fr_margin:-fr_margin], dtype=torch.long, device=device)
-        prob_pred, indices_pred = dsnet(imgs)
+        prob_pred, _ = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].cpu().numpy()
         select_prob = np.squeeze(prob_pred[:, :, :, 1])
         select_ind = np.argmax(prob_pred, axis=0)
@@ -159,8 +161,9 @@ elif args.mode == 'test':
             res_orig[take] = np.vstack(res_orig_arr)
             res_pred_arr, res_orig_arr = [], []
             take = dataset.takes[dataset.cur_tid]
+            take_start_ind[take] = dataset.fr_lb + fr_margin
 
-    results = {'select_pred': res_pred, 'select_orig': res_orig}
+    results = {'select_pred': res_pred, 'select_orig': res_orig, 'start_ind': take_start_ind}
     res_path = '%s/iter_%04d.p' % (cfg.result_dir, args.iter)
-    pickle.dump((results, meta), open(res_path, 'wb'))
+    pickle.dump(results, open(res_path, 'wb'))
     logger.info('saved results to %s' % res_path)
