@@ -1,6 +1,6 @@
 seed: 1
 network: 'dsv3'
-fr_num: 20
+fr_num: 40
 v_hdim: 128
 mlp_dim: [128, 64]
 cnn_fdim: 128
@@ -10,7 +10,7 @@ shuffle: true
 save_model_interval: 100
 num_sample: 10000
 fr_margin: 3
-batch_size: 4
+batch_size: 2
 bi_dir: true
 
 w_d: 1.e-3
