@@ -48,6 +48,8 @@ class Config:
         self.weightdecay = cfg.get('weight_decay', 0.0)
         self.bi_dir = cfg.get('bi_dir', True)
         self.batch_size = cfg.get('batch_size', 5)
+
+        self.cat_loss = cfg.get('cat_loss', 'ce')
     
         self.w_d = cfg.get('w_d', 1.0)
 
