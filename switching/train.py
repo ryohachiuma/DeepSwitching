@@ -50,7 +50,7 @@ dsnet = DSNet(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, f
 if args.iter > 0:
     cp_path = '%s/iter_%04d.p' % (cfg.model_dir, args.iter)
     logger.info('loading model from checkpoint: %s' % cp_path)
-    model_cp, meta = pickle.load(open(cp_path, "rb"))
+    model_cp = pickle.load(open(cp_path, "rb"))
     dsnet.load_state_dict(model_cp['ds_net'], strict=True)
 
 dsnet.to(device)
@@ -78,7 +78,7 @@ def run_epoch(dataset, mode='train'):
     for imgs_np, labels_np, sw_labels_np in dataset:
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
-        labels = tensor(labels_np[:, :, fr_margin:-fr_margin], dtype=torch.long, device=device)
+        labels = tensor(labels_np[:, :, fr_margin:-fr_margin], dtype=torch.long, device=device).contiguous()
         sw_labels = tensor(sw_labels_np[:, fr_margin:-fr_margin], dtype=dtype, device=device)
 
         prob_pred, indices_pred = dsnet(imgs)
@@ -86,7 +86,7 @@ def run_epoch(dataset, mode='train'):
         indices_pred = indices_pred[:, fr_margin:-fr_margin]
 
         """1. Categorical Loss."""
-        cat_loss = cat_crit(prob_pred.contiguous().view(-1, 2), labels.contiguous().view(-1,))
+        cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
         """2. Switching loss."""
         switch_loss = switch_crit(indices_pred, sw_labels)
         loss = cat_loss + cfg.w_d * switch_loss
@@ -95,9 +95,7 @@ def run_epoch(dataset, mode='train'):
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
-            optimizer.step()
-
-            
+            optimizer.step()            
             if cfg.save_model_interval > 0 and _iter['train'] % cfg.save_model_interval == 0:
                 with to_cpu(dsnet):
                     cp_path = '%s/iter_%04d.p' % (cfg.model_dir, _iter['train'])

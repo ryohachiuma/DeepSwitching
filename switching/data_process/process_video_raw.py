@@ -52,8 +52,7 @@ for i in tqdm(range(frame_num)):
         imgs.append(frame)
     cv2.imwrite(out_file_raw, cv2.hconcat(imgs_raw))
     imgs = np.asarray(imgs) # Cam, H, W, Channel
-    #np.savez_compressed(out_file, imgs=imgs)
-    np.save(out_file, imgs)
+    #np.save(out_file, imgs)
         
 
 for cap in captures:
