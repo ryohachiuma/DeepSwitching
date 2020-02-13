@@ -12,5 +12,6 @@ num_sample: 10000
 fr_margin: 3
 batch_size: 4
 bi_dir: true
+cat_loss: 'focal'
 
 w_d: 0.0
