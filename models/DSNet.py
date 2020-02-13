@@ -206,7 +206,7 @@ class DSNetv4(nn.Module):
         self.v_net_type = v_net_type
         self.v_net = RNN(cnn_fdim * 2, v_hdim, bi_dir=bi_dir)
         #self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
-        self.mlp = MLP(v_hdim * 2, mlp_dim, 'relu', is_dropout=is_dropout)
+        self.mlp = MLP(v_hdim, mlp_dim, 'relu', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
 
@@ -238,10 +238,9 @@ class DSNetv4(nn.Module):
         glob_feat = glob_feat.repeat(1, self.camera_num, 1, 1)
         #framenum, batch x cameraNum, cnn_fdimx2 
         cam_features = torch.cat([local_feat, glob_feat], -1).view(-1, fr_num, self.cnn_fdim * 2).permute(1, 0, 2)
-        #batch, cameraNum x framenum, v_hdimx2
-        seq_features = self.v_net(cam_features).permute(1, 0, 2).contiguous()
-        print(seq_features.size())
-        seq_features = seq_features.view(-1, self.v_hdim)
+        
+        #batch x cameraNum, framenum, v_hdim
+        seq_features = self.v_net(cam_features).permute(1, 0, 2).contiguous().view(-1, self.v_hdim)
         #batch x cameraNum x framenum, mlp_dim[-1] 
         seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
