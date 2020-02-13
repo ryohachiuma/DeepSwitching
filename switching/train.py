@@ -45,20 +45,6 @@ logger = create_logger(os.path.join(cfg.log_dir, 'log.txt'))
 dsnet = models_func[cfg.network](2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
         v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
 
-'''
-if cfg.network == 'dsv1':
-    dsnet = DSNetv1(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
-        v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
-elif cfg.network == 'dsv2':
-    dsnet = DSNetv2(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
-        v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
-elif cfg.network == 'dsv3':
-    dsnet = DSNetv3(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
-        v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)    
-'''
-
-
-
 if args.iter > 0:
     cp_path = '%s/iter_%04d.p' % (cfg.model_dir, args.iter)
     logger.info('loading model from checkpoint: %s' % cp_path)
