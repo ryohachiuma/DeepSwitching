@@ -41,7 +41,11 @@ torch.manual_seed(cfg.seed)
 tb_logger = Logger(cfg.tb_dir)
 logger = create_logger(os.path.join(cfg.log_dir, 'log.txt'))
 
+"""network"""
+dsnet = models_func[cfg.network](2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
+        v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
 
+'''
 if cfg.network == 'dsv1':
     dsnet = DSNetv1(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
         v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)
@@ -51,7 +55,7 @@ elif cfg.network == 'dsv2':
 elif cfg.network == 'dsv3':
     dsnet = DSNetv3(2, cfg.v_hdim, cfg.cnn_fdim, dtype, device, mlp_dim=cfg.mlp_dim, camera_num=cfg.camera_num, \
         v_net_param=cfg.v_net_param, bi_dir=cfg.bi_dir, training=(args.mode == 'train'), is_dropout=cfg.is_dropout)    
-"""network"""
+'''
 
 
 
@@ -80,6 +84,7 @@ _iter = {'train': 0, 'val': 0}
 loss_log = {'train': ['loss', 'ce_loss', 'switch_loss'], 'val': ['val_loss', 'val_ce_loss', 'val_switch_loss']}
 
 def run_epoch(dataset, mode='train'):
+    global dsnet, optimizer, focal_crit, switch_crit, kl_crit, _iter
     """
     img: (B, Cam, S, H, W, Channel)
     labels: (B, Cam, S)

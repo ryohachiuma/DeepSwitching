@@ -64,7 +64,6 @@ if args.mode == 'vis':
 
 
 elif args.mode =='stats':
-    print('stat')
     for take in cfg.takes[args.data]:
         select_pred = sr_res['select_pred'][take]
         select_gt = sr_res['select_orig'][take]

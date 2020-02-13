@@ -166,3 +166,6 @@ class Dataset:
         imgs_all = np.rollaxis(imgs_all, 0, 2)
 
         return imgs_all
+        
+    """TODO: Implement data augmentation"""
+    #def augment(self, imgs):
