@@ -239,7 +239,9 @@ class DSNetv4(nn.Module):
         #framenum, batch x cameraNum, cnn_fdimx2 
         cam_features = torch.cat([local_feat, glob_feat], -1).view(-1, fr_num, self.cnn_fdim * 2).permute(1, 0, 2)
         #batch, cameraNum x framenum, v_hdimx2
-        seq_features = self.v_net(cam_features).permute(1, 0, 2).contiguous().view(-1, self.v_hdim)
+        seq_features = self.v_net(cam_features).permute(1, 0, 2).contiguous()
+        print(seq_features.size())
+        seq_features = seq_features.view(-1, self.v_hdim)
         #batch x cameraNum x framenum, mlp_dim[-1] 
         seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
