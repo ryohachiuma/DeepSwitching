@@ -76,7 +76,7 @@ class Dataset:
                 self.fr_lb = int(_len * self.split_ratio)
                 self.fr_ub = _len
             elif self.mode == 'test':
-                self.fr_lb = 0
+                self.fr_lb = int(_len * 0.95)
                 self.fr_ub = _len
 
             self.cur_fr = self.fr_lb
@@ -166,6 +166,6 @@ class Dataset:
         imgs_all = np.rollaxis(imgs_all, 0, 2)
 
         return imgs_all
-        
+
     """TODO: Implement data augmentation"""
     #def augment(self, imgs):
