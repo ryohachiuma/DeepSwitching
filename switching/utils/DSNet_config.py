@@ -15,7 +15,7 @@ class Config:
         self.data_dir = './datasets'
         self.meta = yaml.load(open('%s/meta/meta_file.yml' % (self.data_dir), 'r'), Loader=yaml.FullLoader)
         self.camera_num = self.meta['camera_num']
-        self.takes = {x: self.meta[x] for x in ['train', 'test']}
+        self.takes = {x: self.meta[x] for x in ['train', 'test', 'val']}
 
         # create dirs
         self.base_dir = 'results'

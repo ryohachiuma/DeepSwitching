@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.nn.parameter import Parameter
 from torch.autograd import Function
 import numpy as np
-
+from torch.autograd import Variable
 
 def one_hot(index, classes):
     size = index.size() + (classes,)
@@ -14,25 +14,28 @@ def one_hot(index, classes):
     index = index.view(*view)
     ones = 1.
 
-    print(index)
+    if isinstance(index, Variable):
+        ones = Variable(torch.Tensor(index.size()).fill_(1))
+        mask = Variable(mask, volatile=index.volatile)
     return mask.scatter_(1, index, ones)
 
 
-# https://github.com/DingKe/pytorch_workplace/blob/master/focalloss/loss.py
+#https://github.com/DingKe/pytorch_workplace/blob/master/focalloss/loss.py
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=1.0, eps=1e-7):
+
+    def __init__(self, gamma=0, eps=1e-7):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
         self.eps = eps
 
     def forward(self, input, target):
-        logit = input.clamp(self.eps, 1. - self.eps)
-        loss = F.nll_loss(logit, target, reduction="none")
-        view = target.size() + (1,)
-        index = target.view(*view)
-        loss = loss * (1 - logit.gather(1, index).squeeze(1)) ** self.gamma # focal loss
+        y = one_hot(target, input.size(-1))
+        input = input.clamp(self.eps, 1. - self.eps)
 
-        return loss
+        loss = -1 * y * torch.log(input) # cross entropy
+        loss = loss * (1 - input) ** self.gamma # focal loss
+        print(loss.size())
+        return loss.sum()
 
 class SelectKLLoss(nn.Module):
     def __init__(self, eps=1e-8):
