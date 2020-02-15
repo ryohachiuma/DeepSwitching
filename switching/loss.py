@@ -6,30 +6,34 @@ from torch.autograd import Function
 import numpy as np
 from torch.autograd import Variable
 
-def one_hot(index, classes):
-    size = index.size() + (classes,)
-    view = index.size() + (1,)
-
-    mask = torch.Tensor(*size).fill_(0)
-    index = index.view(*view)
-    ones = 1.
-
-    if isinstance(index, Variable):
-        ones = Variable(torch.Tensor(index.size()).fill_(1))
-        mask = Variable(mask, volatile=index.volatile)
-    return mask.scatter_(1, index, ones)
 
 
 #https://github.com/DingKe/pytorch_workplace/blob/master/focalloss/loss.py
 class FocalLoss(nn.Module):
 
-    def __init__(self, gamma=0, eps=1e-7):
+    def __init__(self, dtype, device, gamma=0, eps=1e-7):
         super(FocalLoss, self).__init__()
+        self.dtype=dtype
+        self.device=device
         self.gamma = gamma
         self.eps = eps
 
+    def one_hot(self, index, classes):
+        size = index.size() + (classes,)
+        view = index.size() + (1,)
+
+        mask = torch.Tensor(*size, dtype=self.dtype, device=self.device).fill_(0)
+        index = index.view(*view)
+        ones = 1.
+
+        if isinstance(index, Variable):
+            ones = Variable(torch.Tensor(index.size(), dtype=self.dtype, device=self.device).fill_(1))
+            mask = Variable(mask, volatile=index.volatile)
+        return mask.scatter_(1, index, ones)
+
+
     def forward(self, input, target):
-        y = one_hot(target, input.size(-1))
+        y = self.one_hot(target, input.size(-1))
         input = input.clamp(self.eps, 1. - self.eps)
 
         loss = -1 * y * torch.log(input) # cross entropy

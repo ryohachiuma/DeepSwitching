@@ -54,7 +54,7 @@ if args.iter > 0:
 dsnet.to(device)
 class_weights = torch.tensor([0.2, 0.8], dtype=dtype, device=device)
 cat_crit = nn.NLLLoss(weight=class_weights)
-focal_crit = loss.FocalLoss()
+focal_crit = loss.FocalLoss(dtype=dtype, device=device)
 switch_crit = loss.SwitchingLoss()
 kl_crit = loss.SelectKLLoss()
 
