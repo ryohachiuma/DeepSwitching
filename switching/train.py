@@ -27,7 +27,6 @@ parser.add_argument('--gpu-index', type=int, default=0)
 parser.add_argument('--iter', type=int, default=0)
 
 args = parser.parse_args()
-
 cfg = Config(args.cfg, create_dirs=(args.iter == 0))
 
 """setup"""
@@ -129,7 +128,7 @@ if args.mode == 'train':
 
     """Dataset"""
     tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
-    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', split_ratio=0.95, overlap=2*cfg.fr_margin)
+    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', split_ratio=0.98, overlap=2*cfg.fr_margin)
     
     for _ in range(args.iter, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
