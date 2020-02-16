@@ -254,7 +254,7 @@ class DSNetv4(nn.Module):
         #batch, fr_num
         max_indices = max_indices.view(-1, fr_num)
 
-        return logits, max_indices
+        return torch.log(logits), max_indices
     
 
 models_func = {
