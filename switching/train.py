@@ -130,7 +130,7 @@ if args.mode == 'train':
     tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
     val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', split_ratio=0.98, overlap=2*cfg.fr_margin)
     
-    for _ in range(args.iter, cfg.num_epoch):
+    for _ in range(args.iter // cfg.num_sample, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
 
         with torch.no_grad():
