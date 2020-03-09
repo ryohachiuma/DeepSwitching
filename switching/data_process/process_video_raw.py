@@ -49,14 +49,13 @@ frame_num = int(captures[0].get(cv2.CAP_PROP_FRAME_COUNT))
 for i in tqdm(range(frame_num)):
     imgs = []
     imgs_raw = []
-    out_file = os.path.join(frame_dir, '%06d.npy' % (i))
+    out_file = os.path.join(frame_dir, '%06d.npz' % (i))
     out_file_raw = os.path.join(frame_dir_img, '%06d.jpg' % (i))
     if args.skip_prev and os.path.isfile(out_file):
         continue
     if splitted:
         for cap in captures:
             _, frame = cap.read()
-            print(frame.shape)
             frame = cv2.resize(frame, dsize=(args.scale_size, args.scale_size))
             imgs_raw.append(frame)
 
@@ -92,9 +91,10 @@ for i in tqdm(range(frame_num)):
         imgs.append(preprocess(frame_4))
 
 
-    cv2.imwrite(out_file_raw, cv2.hconcat(imgs_raw))
+    #cv2.imwrite(out_file_raw, cv2.hconcat(imgs_raw))
     imgs = np.asarray(imgs) # Cam, H, W, Channel
-    np.save(out_file, imgs)
+    #np.save(out_file, imgs)
+    np.savez_compressed(out_file, imgs=imgs)
         
 
 for cap in captures:

@@ -158,8 +158,8 @@ class Dataset:
         take_folder = '%s/%s' % (self.image_folder, self.takes[take_ind])
         imgs_all = []
         for i in range(start, end):
-            img_file = os.path.join(take_folder,'%06d.npy' % (i))
-            imgs = np.load(img_file)
+            img_file = os.path.join(take_folder,'%06d.npz' % (i))
+            imgs = np.load(img_file)['imgs']
             imgs = np.rollaxis(imgs, 3, 1)
             imgs_all.append(imgs)
         imgs_all = np.asarray(imgs_all)
