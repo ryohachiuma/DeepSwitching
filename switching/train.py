@@ -111,7 +111,7 @@ def run_epoch(dataset, mode='train'):
 
 
 if args.mode == 'train':
-    dsnet.train()
+    to_train(dsnet)
 
     """Dataset"""
     tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
@@ -119,9 +119,7 @@ if args.mode == 'train':
     
     for _ in range(args.iter // cfg.num_sample, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
-
-        with torch.no_grad():
-            run_epoch(val_dataset, mode='val')
+        run_epoch(val_dataset, mode='val')
 
 
 
