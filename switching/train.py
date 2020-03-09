@@ -73,32 +73,19 @@ def run_epoch(dataset, mode='train'):
     """
     img: (B, Cam, S, H, W, Channel)
     labels: (B, Cam, S)
-    sw_labels: (B, S - 1)
     """
-    for imgs_np, labels_np, sw_labels_np in dataset:
+    for imgs_np, labels_np, _ in dataset:
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         labels = tensor(labels_np[:, :, fr_margin:-fr_margin], dtype=torch.long, device=device).contiguous()
-        sw_labels = tensor(sw_labels_np[:, fr_margin:-fr_margin], dtype=dtype, device=device)
 
-        prob_pred, indices_pred = dsnet(imgs)
+        prob_pred = dsnet(imgs)
         
         """1. Categorical Loss."""
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].contiguous()
-        if cfg.cat_loss == 'ce':
-            cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
-        elif cfg.cat_loss == 'focal':
-            cat_loss = focal_crit(prob_pred.view(-1, 2), labels.view(-1,))
+        cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
 
-
-        """2. Switching loss."""
-        if cfg.network != 'dsv3':
-            indices_pred = indices_pred[:, fr_margin:-fr_margin]
-            switch_loss = switch_crit(indices_pred, sw_labels)
-        else:
-            indices_pred = indices_pred[:, fr_margin:-fr_margin, :]
-            switch_loss = kl_crit(indices_pred, sw_labels)
-        loss = cat_loss + cfg.w_d * switch_loss
+        loss = cat_loss 
         loss = loss.mean()
 
         if mode == 'train':
@@ -111,15 +98,15 @@ def run_epoch(dataset, mode='train'):
                     model_cp = {'ds_net': dsnet.state_dict()}
                     pickle.dump(model_cp, open(cp_path, 'wb'))
 
-        tb_logger.scalar_summary(loss_log[mode], [loss, cat_loss.mean(), switch_loss.mean()], _iter[mode])  
-        logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} cat_loss {:.4f} sw_loss {:.6f}'
-                        .format(_iter[mode], time.time() - t0, loss, cat_loss.mean(), switch_loss.mean()))
+        tb_logger.scalar_summary(loss_log[mode], [loss, cat_loss.mean()], _iter[mode])  
+        logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f}'
+                        .format(_iter[mode], time.time() - t0, loss))
         _iter[mode]+=1
 
 
         """clean up gpu memory"""
         torch.cuda.empty_cache()
-        del imgs, labels, sw_labels
+        del imgs, labels
 
 
 

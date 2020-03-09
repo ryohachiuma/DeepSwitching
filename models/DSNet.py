@@ -210,21 +210,6 @@ class DSNetv4(nn.Module):
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
 
-    def soft_argmax(self, inputs, beta=50000, dim=1, epsilon=1e-8):
-        '''
-        applay softargmax on inputs, return \sum_i ( i * (exp(A_i * beta) / \sum_i(exp(A_i * beta))))
-        according to https://bouthilx.wordpress.com/2013/04/21/a-soft-argmax/
-        :param A:
-        :param dim:
-        :param epsilon:
-        :return:
-        '''
-        A_max = torch.max(inputs*beta, dim=dim, keepdim=True)[0]
-        A_exp = torch.exp(inputs*beta - A_max)
-        A_softmax = A_exp / (torch.sum(A_exp, dim=dim, keepdim=True) + epsilon)
-        indices = torch.arange(start=0, end=inputs.size()[dim], dtype=self.dtype, \
-            device=self.device, requires_grad=True)
-        return torch.matmul(A_softmax, indices)
 
     def forward(self, inputs):
         fr_num = inputs.size()[2]
@@ -245,16 +230,8 @@ class DSNetv4(nn.Module):
         seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
         logits = self.softmax(self.linear(seq_features)).view(-1, self.camera_num, fr_num, self.out_dim)
-        #batch, cameraNum, framenum
-        select_prob = logits[:, :, :, 1] # 0: not selected, 1: selected
-        #batch x fr_num, cameraNum
-        select_prob = select_prob.permute(0, 2, 1).contiguous().view(-1, self.camera_num)
-        #batch x fr_num
-        max_indices = self.soft_argmax(select_prob)
-        #batch, fr_num
-        max_indices = max_indices.view(-1, fr_num)
-
-        return torch.log(logits), max_indices
+        
+        return torch.log(logits)
     
 
 models_func = {

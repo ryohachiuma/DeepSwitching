@@ -2,7 +2,6 @@ import numpy as np
 import os
 import yaml
 import math
-from utils import get_qvel_fd, de_heading
 import pickle
 import cv2
 
