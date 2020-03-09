@@ -11,6 +11,8 @@ class MLP(nn.Module):
             self.activation = torch.relu
         elif activation == 'sigmoid':
             self.activation = torch.sigmoid
+        elif activation == 'leaky':
+            self.activation = torch.nn.LeakyReLU
 
         self.out_dim = hidden_dims[-1]
         self.affine_layers = nn.ModuleList()
