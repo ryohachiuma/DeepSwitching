@@ -74,7 +74,7 @@ class Dataset:
                 self.fr_ub = int(_len * self.split_ratio)
             elif self.mode == 'val':
                 self.fr_lb = int(_len * self.split_ratio)
-                self.fr_ub = _len
+                self.fr_ub = _len - 10
             elif self.mode == 'test':
                 self.fr_lb = int(_len * 0.95)
                 self.fr_ub = _len
