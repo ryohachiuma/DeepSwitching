@@ -187,11 +187,12 @@ class DSNetv2(nn.Module):
         glob_feat = torch.max(local_feat, 1, keepdim=True)[0]
         #batch, cameraNum, framenum, cnn_fdim
         glob_feat = glob_feat.repeat(1, self.camera_num, 1, 1)
-        #framenum, batch x cameraNum, cnn_fdimx2 
+        # batch x cameraNum, framenum, cnn_fdimx2 
         cam_features = torch.cat([local_feat, glob_feat], -1).view(-1, fr_num, self.cnn_fdim * 2)
         
         #batch x cameraNum, framenum, v_hdim
-        _, seq_features = self.v_net(cam_features).permute(1, 0, 2).contiguous().view(-1, self.v_hdim)
+        _, seq_features = self.v_net(cam_features)
+        seq_features = seq_features.contiguous().view(-1, self.v_hdim)
         #batch x cameraNum x framenum, mlp_dim[-1] 
         seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
