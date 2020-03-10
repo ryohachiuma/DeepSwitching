@@ -1,0 +1,14 @@
+seed: 1
+network: 'dsv2'
+fr_num: 40
+v_hdim: 128
+mlp_dim: [128, 64]
+cnn_fdim: 128
+lr: 1.e-4
+num_epoch: 50
+shuffle: true
+save_model_interval: 100
+num_sample: 10000
+fr_margin: 3
+batch_size: 2
+bi_dir: true
