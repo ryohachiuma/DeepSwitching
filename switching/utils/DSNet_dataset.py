@@ -7,7 +7,7 @@ import cv2
 
 class Dataset:
 
-    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, iter_method='sample', frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000):
+    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, iter_method='sample', frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000, sub_sample=5):
         self.cfg = cfg
         self.mode = mode
         self.fr_num = fr_num
@@ -20,6 +20,7 @@ class Dataset:
         self.frame_size = frame_size
         self.batch_size = batch_size
         self.split_ratio = split_ratio
+        self.sub_sample = sub_sample
 
         self.base_folder = './datasets'
         self.image_folder = os.path.join(self.base_folder, 'frames')
@@ -99,8 +100,8 @@ class Dataset:
                 fr_lb = 0
                 fr_ub = seq_len
 
-            fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num)
-            fr_end = fr_start + self.fr_num 
+            fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num * self.sub_sample)
+            fr_end = fr_start + self.fr_num * self.sub_sample
 
             img = self.load_imgs(take_ind, fr_start, fr_end)
             label = self.convert_label(take_ind, fr_start, fr_end)
@@ -135,7 +136,7 @@ class Dataset:
 
 
     def convert_label(self, take_ind, start, end):
-        label = self.labels[take_ind][start:end]
+        label = self.labels[take_ind][start:end:self.sub_sample]
         res_label = []
         for l in label:
             one_hot_label = np.zeros(self.camera_num)
@@ -149,14 +150,14 @@ class Dataset:
         return np.asarray(res_label)
 
     def convert_label_switch(self, take_ind, start, end):
-        label = self.labels[take_ind][start:end]
+        label = self.labels[take_ind][start:end:self.sub_sample]
         res_label = label[1:] != label[:-1]
         return res_label.astype(np.int64) # The first element contains switching is occured between frame 0 and 1.
  
     def load_imgs(self, take_ind, start, end):
         take_folder = '%s/%s' % (self.image_folder, self.takes[take_ind])
         imgs_all = []
-        for i in range(start, end):
+        for i in range(start, end, self.sub_sample):
             img_file = os.path.join(take_folder,'%06d.npz' % (i))
             imgs = np.load(img_file)['imgs']
             imgs = np.rollaxis(imgs, 3, 1)

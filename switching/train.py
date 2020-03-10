@@ -114,8 +114,8 @@ if args.mode == 'train':
     to_train(dsnet)
 
     """Dataset"""
-    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample)
-    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', split_ratio=0.98, overlap=2*cfg.fr_margin)
+    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample, sub_sample=cfg.sub_sample)
+    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, iter_method='iter', overlap=2*cfg.fr_margin, sub_sample=cfg.sub_sample)
     
     for _ in range(args.iter // cfg.num_sample, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')

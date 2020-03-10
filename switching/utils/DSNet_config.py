@@ -42,6 +42,7 @@ class Config:
         self.num_epoch = cfg['num_epoch']
         self.shuffle = cfg.get('shuffle', False)
         self.num_sample = cfg.get('num_sample', 20000)
+        self.sub_sample = cfg.get('sub_sample', 1)
         self.save_model_interval = cfg['save_model_interval']
         self.fr_margin = cfg['fr_margin']
         self.is_dropout = cfg.get('dropout', False)
