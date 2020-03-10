@@ -48,8 +48,7 @@ class Baseline_seq(nn.Module):
         self.device = device
 
         self.v_net_type = v_net_type
-        self.v_net = RNN(cnn_fdim, v_hdim, bi_dir=bi_dir)
-        #self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
+        self.v_net = nn.LSTM(cnn_fdim, v_hdim // 2, batch_first=True, bidirectional=bi_dir)
         self.mlp = MLP(v_hdim, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
@@ -60,8 +59,9 @@ class Baseline_seq(nn.Module):
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, fr_num, self.cnn_fdim))
         #batch x cameraNum, framenum, v_hdim
-        seq_features = self.v_net(local_feat).permute(1, 0, 2).contiguous().view(-1, self.v_hdim)
-        #batch x cameraNum x framenum, mlp_dim[-1] 
+        seq_features, _ = self.v_net(local_feat)
+        seq_features = seq_features.contiguous().view(-1, self.v_hdim)
+        #batch x cameraNum x framenum, mlp_dim
         seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
         logits = self.softmax(self.linear(seq_features)).view(-1, self.camera_num, fr_num, self.out_dim)

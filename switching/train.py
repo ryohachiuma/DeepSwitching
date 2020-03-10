@@ -91,7 +91,7 @@ def run_epoch(dataset, mode='train'):
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
-            optimizer.step()            
+            optimizer.step()
             if cfg.save_model_interval > 0 and _iter['train'] % cfg.save_model_interval == 0:
                 with to_cpu(dsnet):
                     cp_path = '%s/iter_%04d.p' % (cfg.model_dir, _iter['train'])
