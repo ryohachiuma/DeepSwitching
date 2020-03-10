@@ -84,7 +84,7 @@ class Baseline_spac(nn.Module):
         self.device = device
 
         self.v_net_type = v_net_type
-        self.mlp = MLP(v_hdimw * 2, mlp_dim, 'leaky', is_dropout=is_dropout)
+        self.mlp = MLP(v_hdim * 2, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
 
