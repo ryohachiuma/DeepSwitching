@@ -123,7 +123,7 @@ class Dataset:
                 raise StopIteration
 
             fr_start = self.cur_fr
-            fr_end = self.cur_fr + self.fr_num if self.cur_fr + self.fr_num + 10 < self.fr_ub else self.fr_ub
+            fr_end = self.cur_fr + self.fr_num * self.sub_sample if self.cur_fr + self.fr_num * self.sub_sample + 10 < self.fr_ub else self.fr_ub
             img = self.load_imgs(self.cur_tid, fr_start, fr_end)
             label = self.convert_label(self.cur_tid, fr_start, fr_end)
             switch_label = self.convert_label_switch(self.cur_tid, fr_start, fr_end)
