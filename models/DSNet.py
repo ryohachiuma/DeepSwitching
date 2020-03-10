@@ -171,7 +171,7 @@ class DSNetv2(nn.Module):
 
         self.v_net_type = v_net_type
         #self.v_net = RNN(cnn_fdim * 2, v_hdim, bi_dir=bi_dir)
-        self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim // 2, 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
+        self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim // 2, batch_first=True, dropout=0.01, bidirectional=bi_dir)
         self.mlp = MLP(v_hdim, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
@@ -189,9 +189,8 @@ class DSNetv2(nn.Module):
         glob_feat = glob_feat.repeat(1, self.camera_num, 1, 1)
         # batch x cameraNum, framenum, cnn_fdimx2 
         cam_features = torch.cat([local_feat, glob_feat], -1).view(-1, fr_num, self.cnn_fdim * 2)
-        
         #batch x cameraNum, framenum, v_hdim
-        _, seq_features = self.v_net(cam_features)
+        seq_features, _ = self.v_net(cam_features)
         seq_features = seq_features.contiguous().view(-1, self.v_hdim)
         #batch x cameraNum x framenum, mlp_dim[-1] 
         seq_features = self.mlp(seq_features)
