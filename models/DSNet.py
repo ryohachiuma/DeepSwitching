@@ -30,7 +30,7 @@ class Baseline(nn.Module):
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape))
         seq_features = self.mlp(local_feat)
         #batch, cameraNum, framenum, 2
-        logits = self.lienar(seq_features)
+        logits = self.linear(seq_features).view(-1, self.camera_num, fr_num, 2)
 
         return logits
 
@@ -64,7 +64,7 @@ class Baseline_seq(nn.Module):
         #batch x cameraNum x framenum, mlp_dim
         seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
-        logits = self.lienar(seq_features)
+        logits = self.linear(seq_features).view(-1, self.camera_num, fr_num, 2)
 
         return logits 
 
@@ -105,7 +105,7 @@ class Baseline_spac(nn.Module):
         #batch x cameraNum x framenum, mlp_dim[-1] 
         features = self.mlp(cam_features)
         #batch, cameraNum, framenum, 2
-        logits = self.lienar(seq_features)
+        logits = self.linear(features).view(-1, self.camera_num, fr_num, 2)
 
         return logits
 
@@ -149,7 +149,7 @@ class DSNet(nn.Module):
         #batch x cameraNum x framenum, mlp_dim[-1] 
         seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
-        logits = self.lienar(seq_features)
+        logits = self.linear(seq_features).view(-1, self.camera_num, fr_num, 2)
 
         return logits
     
@@ -195,7 +195,7 @@ class DSNetv2(nn.Module):
         #batch x cameraNum x framenum, mlp_dim[-1] 
         seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
-        logits = self.lienar(seq_features)
+        logits = self.linear(seq_features).view(-1, self.camera_num, fr_num, 2)
 
         return logits
 
@@ -240,7 +240,7 @@ class DSNetv3(nn.Module):
         #batch x cameraNum x framenum, mlp_dim[-1] 
         seq_features = self.mlp(seq_features)
         #batch, cameraNum, framenum, 2
-        logits = self.lienar(seq_features)
+        logits = self.linear(seq_features).view(-1, self.camera_num, fr_num, 2)
 
         return logits
 
