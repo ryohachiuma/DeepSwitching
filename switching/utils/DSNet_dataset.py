@@ -10,6 +10,7 @@ class Dataset:
     def __init__(self, cfg, mode, fr_num, camera_num, batch_size, iter_method='sample', frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000, sub_sample=5):
         self.cfg = cfg
         self.mode = mode
+        self.split ='sequence'
         self.fr_num = fr_num
         self.shuffle = shuffle
         self.overlap = overlap
@@ -27,11 +28,16 @@ class Dataset:
         self.label_folder = os.path.join(self.base_folder, 'labels')
 
         # get take names
-        
-        if mode == 'train' or mode == 'val':
-            self.takes = self.cfg.takes['train']
-        else:
-            self.takes = self.cfg.takes[mode]
+        if self.split == 'sequence':
+            if mode == 'train' or mode == 'val':
+                self.takes = self.cfg.takes['train']
+            else:
+                self.takes = self.cfg.takes[mode]
+        elif self.split == 'surgery':
+            if mode == 'train':
+                self.takes = self.cfg.takes[mode]
+            else:
+                self.takes = self.cfg.takes['test']            
         # iterator specific
         self.sample_count = None
         self.take_indices = None
@@ -64,21 +70,29 @@ class Dataset:
             self.__next_take()
         return self
 
+    def get_lb_ub(self, _len):
+        if self.split == 'sequence':
+            if self.mode == 'train':
+                fr_lb = 0
+                fr_ub = int(_len * self.split_ratio)
+            elif self.mode == 'val':
+                fr_lb = int(_len * self.split_ratio)
+                fr_ub = _len
+            elif self.mode == 'test':
+                fr_lb = int(_len * self.split_ratio)
+                fr_ub = _len   
+        elif self.split == 'surgery':
+            fr_lb = 0
+            fr_ub = _len
+
+        return fr_lb, fr_ub
+
     def __next_take(self):
         self.cur_ind = self.cur_ind + 1
         if self.cur_ind < len(self.take_indices):
             self.cur_tid = self.take_indices[self.cur_ind]
             _len = self.seq_len[self.cur_tid]
-            if self.mode == 'train':
-                self.fr_lb = 0
-                self.fr_ub = int(_len * self.split_ratio)
-            elif self.mode == 'val':
-                self.fr_lb = int(_len * self.split_ratio)
-                self.fr_ub = _len
-            elif self.mode == 'test':
-                self.fr_lb = int(_len * 0.95)
-                self.fr_ub = _len
-
+            self.fr_lb, self.fr_ub = self.get_lb_ub(_len)
             self.cur_fr = self.fr_lb
 
     def sample(self):
@@ -89,16 +103,7 @@ class Dataset:
             self.sample_count += self.fr_num - self.overlap
             take_ind = np.random.randint(len(self.takes))
             seq_len = self.seq_len[take_ind]
-        
-            if self.mode == 'train':
-                fr_lb = 0
-                fr_ub = int(seq_len * self.split_ratio)
-            elif self.mode == 'val':
-                fr_lb = int(seq_len * self.split_ratio)
-                fr_ub = seq_len
-            elif self.mode == 'test':
-                fr_lb = 0
-                fr_ub = seq_len
+            fr_lb, fr_ub = self.get_lb_ub(seq_len)
 
             fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num * self.sub_sample)
             fr_end = fr_start + self.fr_num * self.sub_sample
