@@ -17,7 +17,7 @@ from models.DSNet import *
 from switching import loss
 from switching.utils.DSNet_dataset import Dataset
 from switching.utils.DSNet_config import Config
-
+import torch.nn.functional as F
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', default='model_01')
@@ -67,7 +67,7 @@ fr_margin = cfg.fr_margin
 
 logger_str = {'train': "Training: ", 'val': "Validation: "}
 _iter = {'train': 0, 'val': 0}
-loss_log = {'train': ['loss', 'ce_loss', 'switch_loss'], 'val': ['val_loss', 'val_ce_loss', 'val_switch_loss']}
+loss_log = {'train': ['loss', 'acc'], 'val': ['val_loss', 'val_acc']}
 
 def run_epoch(dataset, mode='train'):
     global dsnet, optimizer, focal_crit, switch_crit, kl_crit, _iter
@@ -86,8 +86,7 @@ def run_epoch(dataset, mode='train'):
         #cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
         cat_loss = cross_entropy_loss(prob_pred.view(-1, 2), labels.view(-1,))
 
-        loss = cat_loss 
-        loss = loss.mean()
+        loss = cat_loss.mean()
 
         if mode == 'train':
             optimizer.zero_grad()
@@ -99,9 +98,15 @@ def run_epoch(dataset, mode='train'):
                     model_cp = {'ds_net': dsnet.state_dict()}
                     pickle.dump(model_cp, open(cp_path, 'wb'))
 
-        tb_logger.scalar_summary(loss_log[mode], [loss, cat_loss.mean()], _iter[mode])  
-        logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f}'
-                        .format(_iter[mode], time.time() - t0, loss))
+
+        prob_pred = F.softmax(prob_pred, dim=-1).detach().cpu().numpy()
+        select_ind = np.argmax(prob_pred, axis=-1)
+        label_gt = labels_np[:, :, fr_margin:-fr_margin]
+        assert select_ind.shape == label_gt.shape, 'shape should match!'
+        acc = np.count_nonzero(select_ind == label_gt) / float(label_gt.shape[0] * label_gt.shape[1] * label_gt.shape[2])
+        tb_logger.scalar_summary(loss_log[mode], [loss, acc], _iter[mode])  
+        logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} acc {:.4f}'
+                        .format(_iter[mode], time.time() - t0, loss, acc))
         _iter[mode]+=1
 
 
@@ -143,14 +148,12 @@ elif args.mode == 'test':
             take_start_ind[take] = dataset.fr_lb + fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         prob_pred = dsnet(imgs)
-        prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].cpu().numpy()
+        prob_pred = F.softmax(prob_pred[:, :, fr_margin: -fr_margin, :], dim=-1).cpu().numpy()
         select_prob = np.squeeze(prob_pred[:, :, :, 1])
         select_ind = np.argmax(select_prob, axis=0)
-        print(select_ind)
         res_pred_arr.append(select_ind)
 
         select_ind_gt = np.argmax(np.squeeze(labels_np[:, :, fr_margin:-fr_margin]), axis=0)
-        print(select_ind_gt)
         res_orig_arr.append(select_ind_gt)
 
         if dataset.cur_ind >= len(dataset.takes) or dataset.takes[dataset.cur_tid] != take:
