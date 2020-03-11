@@ -1,6 +1,6 @@
 seed: 1
 network: 'dsv2'
-fr_num: 20
+fr_num: 40
 v_hdim: 128
 mlp_dim: [128, 64]
 cnn_fdim: 128
