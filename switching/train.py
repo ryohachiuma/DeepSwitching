@@ -54,7 +54,7 @@ dsnet.to(device)
 class_weights = torch.tensor([0.2, 0.8], dtype=dtype, device=device)
 cross_entropy_loss = nn.CrossEntropyLoss(weight=class_weights)
 cat_crit = nn.NLLLoss(weight=class_weights)
-focal_crit = loss.FocalLoss(dtype=dtype, device=device)
+focal_crit = loss.FocalLoss()
 switch_crit = loss.SwitchingLoss()
 kl_crit = loss.SelectKLLoss()
 
@@ -84,8 +84,10 @@ def run_epoch(dataset, mode='train'):
         """1. Categorical Loss."""
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].contiguous()
         #cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
-        cat_loss = cross_entropy_loss(prob_pred.view(-1, 2), labels.view(-1,))
-
+        if cfg.loss == 'cross_entropy':
+            cat_loss = cross_entropy_loss(prob_pred.view(-1, 2), labels.view(-1,))
+        elif cfg.loss == 'focal':
+            cat_loss = focal_crit(prob_pred.view(-1, 2), labels.view(-1,))
         loss = cat_loss.mean()
 
         if mode == 'train':

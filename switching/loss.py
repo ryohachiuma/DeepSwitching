@@ -7,7 +7,25 @@ import numpy as np
 from torch.autograd import Variable
 
 
-
+class FocalLoss(nn.Module):
+    
+    def __init__(self, weight=None, 
+                 gamma=2., reduction='none'):
+        nn.Module.__init__(self)
+        self.weight = weight
+        self.gamma = gamma
+        self.reduction = reduction
+        
+    def forward(self, input_tensor, target_tensor):
+        log_prob = F.log_softmax(input_tensor, dim=-1)
+        prob = torch.exp(log_prob)
+        return F.nll_loss(
+            ((1 - prob) ** self.gamma) * log_prob, 
+            target_tensor, 
+            weight=self.weight,
+            reduction = self.reduction
+        )
+'''
 #https://github.com/DingKe/pytorch_workplace/blob/master/focalloss/loss.py
 class FocalLoss(nn.Module):
 
@@ -40,7 +58,7 @@ class FocalLoss(nn.Module):
         loss = loss * (1 - input) ** self.gamma # focal loss
         print(loss.size())
         return loss.sum()
-
+'''
 class SelectKLLoss(nn.Module):
     def __init__(self, eps=1e-8):
         super(SelectKLLoss, self).__init__()
