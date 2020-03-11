@@ -91,10 +91,10 @@ for i in tqdm(range(frame_num)):
         imgs.append(preprocess(frame_4))
 
 
-    #cv2.imwrite(out_file_raw, cv2.hconcat(imgs_raw))
+    cv2.imwrite(out_file_raw, cv2.hconcat(imgs_raw))
     imgs = np.asarray(imgs) # Cam, H, W, Channel
     #np.save(out_file, imgs)
-    np.savez_compressed(out_file, imgs=imgs)
+    #np.savez_compressed(out_file, imgs=imgs)
         
 
 for cap in captures:

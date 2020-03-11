@@ -75,9 +75,15 @@ if args.mode == 'vis':
 
 
 elif args.mode =='stats':
+    overall = 0.0
     for take in cfg.takes[args.data]:
         select_pred = sr_res['select_pred'][take]
         select_gt = sr_res['select_orig'][take]
         start_ind = sr_res['start_ind'][take]
 
-        print('take %s Accuracy: %.4f' % (take, np.count_nonzero(select_pred == select_gt) / float(select_gt.shape[0])))
+        acc = np.count_nonzero(select_pred == select_gt) / float(select_gt.shape[0])
+        print('take %s Accuracy: %.4f' % (take, acc))
+        overall += acc
+    print('-' * 50)
+    print('overall Accuracy : %.4f' % (overall / len(cfg.takes[args.data])))
+    print('-' * 50)

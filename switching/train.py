@@ -52,6 +52,7 @@ if args.iter > 0:
 
 dsnet.to(device)
 class_weights = torch.tensor([0.2, 0.8], dtype=dtype, device=device)
+cross_entropy_loss = nn.CrossEntropyLoss(weight=class_weights)
 cat_crit = nn.NLLLoss(weight=class_weights)
 focal_crit = loss.FocalLoss(dtype=dtype, device=device)
 switch_crit = loss.SwitchingLoss()
@@ -78,12 +79,12 @@ def run_epoch(dataset, mode='train'):
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         labels = tensor(labels_np[:, :, fr_margin:-fr_margin], dtype=torch.long, device=device).contiguous()
-
         prob_pred = dsnet(imgs)
         
         """1. Categorical Loss."""
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].contiguous()
-        cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
+        #cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
+        cat_loss = cross_entropy_loss(prob_pred, labels.view(-1,))
 
         loss = cat_loss 
         loss = loss.mean()
@@ -126,7 +127,7 @@ if args.mode == 'train':
 
 elif args.mode == 'test':
     dsnet.eval()
-    dataset = Dataset(cfg, args.data, cfg.fr_num, cfg.camera_num, 1, iter_method='iter', split_ratio=0.99, overlap=2*cfg.fr_margin)
+    dataset = Dataset(cfg, args.data, cfg.fr_num, cfg.camera_num, 1, iter_method='iter', overlap=2*cfg.fr_margin)
     torch.set_grad_enabled(False)
 
     res_pred = {}
@@ -140,9 +141,8 @@ elif args.mode == 'test':
     for imgs_np, labels_np, _ in dataset:
         if not take in take_start_ind:
             take_start_ind[take] = dataset.fr_lb + fr_margin
-        t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
-        prob_pred, _ = dsnet(imgs)
+        prob_pred = dsnet(imgs)
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].cpu().numpy()
         select_prob = np.squeeze(prob_pred[:, :, :, 1])
         select_ind = np.argmax(select_prob, axis=0)
