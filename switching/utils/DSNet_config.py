@@ -12,8 +12,9 @@ class Config:
             print("Config file doesn't exist: %s" % cfg_name)
             exit(0)
         cfg = yaml.load(open(cfg_name, 'r'), Loader=yaml.FullLoader)
+        self.split = cfg.get('split', 'sequence')
         self.data_dir = './datasets'
-        self.meta = yaml.load(open('%s/meta/meta_file.yml' % (self.data_dir), 'r'), Loader=yaml.FullLoader)
+        self.meta = yaml.load(open('%s/meta/meta_%s.yml' % (self.data_dir, self.split), 'r'), Loader=yaml.FullLoader)
         self.camera_num = self.meta['camera_num']
         self.takes = {x: self.meta[x] for x in ['train', 'test', 'val']}
 
