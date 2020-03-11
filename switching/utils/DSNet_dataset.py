@@ -7,10 +7,10 @@ import cv2
 
 class Dataset:
 
-    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, iter_method='sample', frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000, sub_sample=5):
+    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, split, iter_method='sample', frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000, sub_sample=5):
         self.cfg = cfg
         self.mode = mode
-        self.split ='sequence'
+        self.split = split
         self.fr_num = fr_num
         self.shuffle = shuffle
         self.overlap = overlap
