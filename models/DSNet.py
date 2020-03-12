@@ -373,7 +373,7 @@ class DSNetv3(nn.Module):
     class ResNet(nn.Module):
         def __init__(self, fix_params=False, running_stats=False):
             super().__init__()
-            resnet = models.resnet34(pretrained=True)
+            resnet = models.resnet18(pretrained=True)
             modules = list(resnet.children())[:-3]      # delete the last fc layer and average pooling.
             self.resnet = nn.Sequential(*modules)
             self.bn_stats(running_stats)
@@ -422,7 +422,7 @@ class DSNetv3(nn.Module):
         self.frame_shape = frame_shape
         self.camera_num = camera_num
         self.cnn = self.ResNet(running_stats=training)
-        self.spatial_attention = self.SpatialSELayer(self.cnn_fdim)
+        self.spatial_attention = self.SpatialSELayer(256)
         self.dtype = dtype
         self.device = device
 
@@ -439,6 +439,7 @@ class DSNetv3(nn.Module):
         fr_num = inputs.size()[2]
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape))
+        print(local_feat.size())
         feat_size = local_feat.size()[-1]
         local_feat = self.spatial_attention(local_feat).contiguous().view(-1, self.camera_num, fr_num, self.cnn_fdim, feat_size, feat_size)
         glob_feat = torch.max(local_feat, 1, keepdim=True)[0]

@@ -1,6 +1,6 @@
 seed: 1
-network: 'dsv3'
-fr_num: 10
+network: 'baseline_seq'
+fr_num: 40
 v_hdim: 128
 mlp_dim: [128, 64]
 cnn_fdim: 128
@@ -14,3 +14,4 @@ fr_margin: 3
 batch_size: 2
 bi_dir: true
 loss: 'focal'
+split: 'surgery'
