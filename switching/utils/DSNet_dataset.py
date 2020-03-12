@@ -165,12 +165,41 @@ class Dataset:
         for i in range(start, end, self.sub_sample):
             img_file = os.path.join(take_folder,'%06d.npz' % (i))
             imgs = np.load(img_file, allow_pickle=True)['imgs']
-            imgs = np.rollaxis(imgs, 3, 1)
+            print(imgs.shape)
+            if self.mode != 'train':
+                imgs = np.rollaxis(imgs, 3, 1)
             imgs_all.append(imgs)
+        if self.mode == 'train':
+            imgs_all = self.augment(imgs_all)
         imgs_all = np.asarray(imgs_all)
         imgs_all = np.rollaxis(imgs_all, 0, 2)
 
         return imgs_all
 
     """TODO: Implement data augmentation"""
-    #def augment(self, imgs):
+    """Horizontal flip, vertical flip, random crop, gaussian noise"""
+    def augment(self, imgs_all):
+        c_vflip = np.random.rand(1) > 0.5
+        c_hflip = np.random.rand(1) > 0.5
+        crop_top = np.random.randint(0, 256 - 224)
+        crop_left = np.random.randint(0, 256 - 224)
+        gauss = np.random.normal(0,0.01,(224,224,3))
+        gauss = gauss.reshape(224,224,3)
+
+        augmented_imgs_all = []
+        for imgs in imgs_all:
+            for c_idx in range(imgs.shape[0]):
+                img = imgs[c_idx, :, :, :].copy()
+                if c_vflip:
+                    img = img[::-1, :, :]
+                if c_hflip:
+                    img = img[:, ::-1, :]
+                img = cv2.resize(img, dsize=(256,256), interpolation=cv2.INTER_LINEAR)
+                img = img[crop_top:crop_top+224, crop_left:crop_left+224, :]
+                img += gauss
+                imgs[c_idx, :, :, :] = img
+            imgs = np.rollaxis(imgs, 3, 1)
+            augmented_imgs_all.append(imgs)
+
+        return augmented_imgs_all
+                

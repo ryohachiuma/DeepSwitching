@@ -1,9 +1,9 @@
 seed: 1
 network: 'dsv3'
-fr_num: 10
+fr_num: 40
 v_hdim: 128
 mlp_dim: [128, 64]
-cnn_fdim: 128
+cnn_fdim: 256
 lr: 1.e-4
 num_epoch: 50
 shuffle: true

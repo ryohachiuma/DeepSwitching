@@ -439,7 +439,6 @@ class DSNetv3(nn.Module):
         fr_num = inputs.size()[2]
         #batch x cameraNum, framenum, cnn_fdim
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape))
-        print(local_feat.size())
         feat_size = local_feat.size()[-1]
         local_feat = self.spatial_attention(local_feat).contiguous().view(-1, self.camera_num, fr_num, self.cnn_fdim, feat_size, feat_size)
         glob_feat = torch.max(local_feat, 1, keepdim=True)[0]
