@@ -165,7 +165,6 @@ class Dataset:
         for i in range(start, end, self.sub_sample):
             img_file = os.path.join(take_folder,'%06d.npz' % (i))
             imgs = np.load(img_file, allow_pickle=True)['imgs']
-            print(imgs.shape)
             if self.mode != 'train':
                 imgs = np.rollaxis(imgs, 3, 1)
             imgs_all.append(imgs)
