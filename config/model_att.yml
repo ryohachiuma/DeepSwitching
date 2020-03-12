@@ -1,9 +1,9 @@
 seed: 1
-network: 'ds'
-fr_num: 40
+network: 'dsv3'
+fr_num: 10
 v_hdim: 128
 mlp_dim: [128, 64]
-cnn_fdim: 128
+cnn_fdim: 256
 lr: 1.e-4
 num_epoch: 50
 shuffle: true
@@ -13,3 +13,4 @@ sub_sample: 5
 fr_margin: 3
 batch_size: 2
 bi_dir: true
+loss: 'focal'
