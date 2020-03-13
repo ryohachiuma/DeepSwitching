@@ -135,6 +135,7 @@ if args.mode == 'train':
 elif args.mode == 'test':
     to_test(dsnet)
     dataset = Dataset(cfg, 'test', cfg.fr_num,  cfg.camera_num, 1, cfg.split, iter_method='iter', overlap=2*cfg.fr_margin, sub_sample=cfg.sub_sample)
+    print(dataset.takes)
     torch.set_grad_enabled(False)
 
     res_pred = {}
@@ -145,6 +146,7 @@ elif args.mode == 'test':
     meta_start_arr = []
     take = dataset.takes[0]
     for imgs_np, labels_np, _ in dataset:
+        print(take)
         if not take in take_:
             take_[take] = dataset.fr_lb + fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)

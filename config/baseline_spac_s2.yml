@@ -14,3 +14,4 @@ fr_margin: 3
 batch_size: 2
 bi_dir: true
 loss: 'focal'
+split: 'surgery'
