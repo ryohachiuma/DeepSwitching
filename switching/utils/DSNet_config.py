@@ -55,4 +55,4 @@ class Config:
         self.loss = cfg.get('loss', 'cross_entropy')
     
         self.w_d = cfg.get('w_d', 1.0)
-
+        self.scheduled_k = cfg.get('scheduled_k', 0.9991)

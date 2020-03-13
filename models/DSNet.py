@@ -214,7 +214,8 @@ class DSNet_AR(nn.Module):
         self.v_hdim = v_hdim
         self.frame_shape = frame_shape
         self.camera_num = camera_num
-        self.cnn = ResNet(cnn_fdim, running_stats=training)
+        self.training = training
+        self.cnn = ResNet(cnn_fdim, running_stats=self.training)
         self.dtype = dtype
         self.device = device
 
@@ -224,7 +225,7 @@ class DSNet_AR(nn.Module):
         self.mlp = ResidualMLP(v_hdim + 1, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
-        self.scheduled_k = 0.9991
+        self.scheduled_k = 0.998
 
 
     def forward(self, inputs, gt_label, _iter):
@@ -253,7 +254,7 @@ class DSNet_AR(nn.Module):
             ar_features = self.mlp(ar_features)
             #batch, cameraNum, 2
             pred = self.linear(ar_features)
-            if initial_sampling.sample():
+            if initial_sampling.sample() and self.training:
                 prev_pred = gt_label[:, :, fr].view(-1,).unsqueeze(1).type(self.dtype)
             else:
                 prev_pred = self.softmax(pred.clone())[:, 1].unsqueeze(1)
@@ -462,7 +463,8 @@ class DSNet_ConvAR(nn.Module):
         self.v_hdim = v_hdim
         self.frame_shape = frame_shape
         self.camera_num = camera_num
-        self.cnn = self.ResNet(running_stats=training)
+        self.training = training
+        self.cnn = self.ResNet(running_stats=self.training)
         self.spatial_attention = self.SpatialSELayer(256)
         self.dtype = dtype
         self.device = device
@@ -474,7 +476,7 @@ class DSNet_ConvAR(nn.Module):
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.sigmoid = nn.Sigmoid()
         self.gap = nn.AdaptiveAvgPool2d((1, 1))
-        self.scheduled_k = 0.9991
+        self.scheduled_k = 0.998
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, inputs, gt_label, _iter):
@@ -507,7 +509,7 @@ class DSNet_ConvAR(nn.Module):
             ar_features = self.mlp(ar_features)
             #batch, cameraNum, 2
             pred = self.linear(ar_features)
-            if initial_sampling.sample():
+            if initial_sampling.sample() and self.training:
                 prev_pred = gt_label[:, :, fr].view(-1,).unsqueeze(1).type(self.dtype)
             else:
                 prev_pred = self.softmax(pred.clone())[:, 1].unsqueeze(1)
