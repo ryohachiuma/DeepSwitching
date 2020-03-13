@@ -79,7 +79,7 @@ def run_epoch(dataset, mode='train'):
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         labels = tensor(labels_np, dtype=torch.long, device=device)
-        if cfg.network == 'dsar':
+        if cfg.network == 'dsar' or cfg.network == 'DSNet_ConvAR':
             prob_pred = dsnet(imgs, labels, _iter['train'])
         else:
             prob_pred = dsnet(imgs)
