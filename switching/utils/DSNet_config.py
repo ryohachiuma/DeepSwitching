@@ -50,6 +50,7 @@ class Config:
         self.weightdecay = cfg.get('weight_decay', 0.0)
         self.bi_dir = cfg.get('bi_dir', True)
         self.batch_size = cfg.get('batch_size', 5)
+        self.iter_method = cfg.get('iter_method', 'sample')
 
         self.loss = cfg.get('loss', 'cross_entropy')
     

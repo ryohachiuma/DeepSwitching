@@ -38,8 +38,6 @@ class Dataset:
                 self.takes = self.cfg.takes[mode]
             else:
                 self.takes = self.cfg.takes['test']
-        print(self.takes)
-        print('take')
         # iterator specific
         self.sample_count = None
         self.take_indices = None

@@ -78,15 +78,19 @@ def run_epoch(dataset, mode='train'):
     for imgs_np, labels_np, _ in dataset:
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
-        labels = tensor(labels_np[:, :, fr_margin:-fr_margin], dtype=torch.long, device=device).contiguous()
-        prob_pred = dsnet(imgs)
+        labels = tensor(labels_np, dtype=torch.long, device=device)
+        if cfg.network == 'dsar':
+            prob_pred = dsnet(imgs, labels)
+        else:
+            prob_pred = dsnet(imgs)
         
         """1. Categorical Loss."""
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].contiguous()
+        labels_gt = labels[:, :, fr_margin:-fr_margin].contiguous()
         if cfg.loss == 'cross_entropy':
-            cat_loss = cross_entropy_loss(prob_pred.view(-1, 2), labels.view(-1,))
+            cat_loss = cross_entropy_loss(prob_pred.view(-1, 2), labels_gt.view(-1,))
         elif cfg.loss == 'focal':
-            cat_loss = focal_crit(prob_pred.view(-1, 2), labels.view(-1,))
+            cat_loss = focal_crit(prob_pred.view(-1, 2), labels_gt.view(-1,))
         loss = cat_loss.mean()
 
         if mode == 'train':
@@ -121,7 +125,7 @@ if args.mode == 'train':
     to_train(dsnet)
 
     """Dataset"""
-    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.split, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample, sub_sample=cfg.sub_sample)
+    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.split, iter_method=cfg.iter_method, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample, sub_sample=cfg.sub_sample)
     val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, cfg.split, iter_method='iter', overlap=2*cfg.fr_margin, sub_sample=cfg.sub_sample)
     
     for _ in range(args.iter // cfg.num_sample, cfg.num_epoch):

@@ -9,6 +9,7 @@ import time
 import glob
 import numpy as np
 import cv2
+import shutil
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
@@ -51,16 +52,35 @@ if args.mode == 'vis':
         start_ind = sr_res['start_ind'][take]
 
         if args.show_type == 'image':
+            out_image_dir = '%s/%s/results/%s_iter_%04d' % (res_base_dir, args.cfg, take, args.iter)
+            os.makedirs(out_image_dir, exist_ok=True)
             for ind in range(0, len(select_pred)):
                 pred = select_pred[ind]
                 gt   = select_gt[ind]
-    
+
+                for i in range(cfg.sub_sample):
+                    
+                    img_file = os.path.join(raw_img_dir, take, '%06d.jpg' % (start_ind + ind * cfg.sub_sample + i))
+                    new_file = os.path.join(out_image_dir, '%06d_pred%d_gt%d.jpg' % (start_ind + ind * cfg.sub_sample + i, pred, gt))
+                    shutil.copy(img_file, new_file)
+                    
+        else:
+            fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+            if args.show_type == 'compare':
+                res_size = (224*2, 224)
+            elif args.show_type == 'selected':
+                res_size = (224*5, 224)
+            video_writer = cv2.VideoWriter(out_movie_path, int(fourcc), FPS, res_size)
+            for ind in range(0, len(select_pred)):
+                pred = select_pred[ind]
+                gt   = select_gt[ind]
+
                 for i in range(cfg.sub_sample):
                     img_file = os.path.join(raw_img_dir, take, '%06d.jpg' % (start_ind + ind * cfg.sub_sample + i))
                     img = cv2.imread(img_file)
                     img_size = img.shape[0]
-    
-    
+
+
                     if args.show_type == 'compare':
                         pred_img = img[:, img_size*pred:img_size*(pred+1), :]
                         gt_img   = img[:, img_size*gt:img_size*(gt+1), :]
@@ -68,36 +88,10 @@ if args.mode == 'vis':
                     elif args.show_type == 'selected':
                         _mask = np.zeros(img.shape, dtype=np.uint8)
                         _mask[:, img_size*pred:img_size*(pred+1), :] = [255, 255, 255]
-                        res_img = cv2.addWeighted(img, 0.8, _mask, 0.2, 0)            
+                        res_img = cv2.addWeighted(img, 0.8, _mask, 0.2, 0)
 
-
-        fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-        if args.show_type == 'compare':
-            res_size = (224*2, 224)
-        elif args.show_type == 'selected':
-            res_size = (224*5, 224)
-        video_writer = cv2.VideoWriter(out_movie_path, int(fourcc), FPS, res_size)
-        for ind in range(0, len(select_pred)):
-            pred = select_pred[ind]
-            gt   = select_gt[ind]
-
-            for i in range(cfg.sub_sample):
-                img_file = os.path.join(raw_img_dir, take, '%06d.jpg' % (start_ind + ind * cfg.sub_sample + i))
-                img = cv2.imread(img_file)
-                img_size = img.shape[0]
-
-
-                if args.show_type == 'compare':
-                    pred_img = img[:, img_size*pred:img_size*(pred+1), :]
-                    gt_img   = img[:, img_size*gt:img_size*(gt+1), :]
-                    res_img = cv2.hconcat([pred_img, gt_img])
-                elif args.show_type == 'selected':
-                    _mask = np.zeros(img.shape, dtype=np.uint8)
-                    _mask[:, img_size*pred:img_size*(pred+1), :] = [255, 255, 255]
-                    res_img = cv2.addWeighted(img, 0.8, _mask, 0.2, 0)
-
-                video_writer.write(res_img)
-        video_writer.release()
+                    video_writer.write(res_img)
+            video_writer.release()
 
 
 elif args.mode =='stats':
