@@ -25,7 +25,7 @@ parser.add_argument('--cfg', default='model_01')
 parser.add_argument('--mode', default='vis')
 parser.add_argument('--iter', type=int, default=0)
 parser.add_argument('--data', default='test')
-parser.add_argument('--show-type', default='compare', help='compare or selected')
+parser.add_argument('--show-type', default='compare', help='compare, selected, or image')
 
 args = parser.parse_args()
 
@@ -50,6 +50,26 @@ if args.mode == 'vis':
         select_gt = sr_res['select_orig'][take]
         start_ind = sr_res['start_ind'][take]
 
+        if args.show_type == 'image':
+            for ind in range(0, len(select_pred)):
+                pred = select_pred[ind]
+                gt   = select_gt[ind]
+    
+                for i in range(cfg.sub_sample):
+                    img_file = os.path.join(raw_img_dir, take, '%06d.jpg' % (start_ind + ind * cfg.sub_sample + i))
+                    img = cv2.imread(img_file)
+                    img_size = img.shape[0]
+    
+    
+                    if args.show_type == 'compare':
+                        pred_img = img[:, img_size*pred:img_size*(pred+1), :]
+                        gt_img   = img[:, img_size*gt:img_size*(gt+1), :]
+                        res_img = cv2.hconcat([pred_img, gt_img])
+                    elif args.show_type == 'selected':
+                        _mask = np.zeros(img.shape, dtype=np.uint8)
+                        _mask[:, img_size*pred:img_size*(pred+1), :] = [255, 255, 255]
+                        res_img = cv2.addWeighted(img, 0.8, _mask, 0.2, 0)            
+
 
         fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
         if args.show_type == 'compare':
@@ -57,25 +77,26 @@ if args.mode == 'vis':
         elif args.show_type == 'selected':
             res_size = (224*5, 224)
         video_writer = cv2.VideoWriter(out_movie_path, int(fourcc), FPS, res_size)
-        for ind in range(len(select_pred)):
+        for ind in range(0, len(select_pred)):
             pred = select_pred[ind]
             gt   = select_gt[ind]
 
-            img_file = os.path.join(raw_img_dir, take, '%06d.jpg' % (start_ind + ind))
-            img = cv2.imread(img_file)
-            img_size = img.shape[0]
+            for i in range(cfg.sub_sample):
+                img_file = os.path.join(raw_img_dir, take, '%06d.jpg' % (start_ind + ind * cfg.sub_sample + i))
+                img = cv2.imread(img_file)
+                img_size = img.shape[0]
 
 
-            if args.show_type == 'compare':
-                pred_img = img[:, img_size*pred:img_size*(pred+1), :]
-                gt_img   = img[:, img_size*gt:img_size*(gt+1), :]
-                res_img = cv2.hconcat([pred_img, gt_img])
-            elif args.show_type == 'selected':
-                _mask = np.zeros(img.shape, dtype=np.uint8)
-                _mask[:, img_size*pred:img_size*(pred+1), :] = [255, 255, 255]
-                res_img = cv2.addWeighted(img, 0.8, _mask, 0.2, 0)
+                if args.show_type == 'compare':
+                    pred_img = img[:, img_size*pred:img_size*(pred+1), :]
+                    gt_img   = img[:, img_size*gt:img_size*(gt+1), :]
+                    res_img = cv2.hconcat([pred_img, gt_img])
+                elif args.show_type == 'selected':
+                    _mask = np.zeros(img.shape, dtype=np.uint8)
+                    _mask[:, img_size*pred:img_size*(pred+1), :] = [255, 255, 255]
+                    res_img = cv2.addWeighted(img, 0.8, _mask, 0.2, 0)
 
-            video_writer.write(res_img)
+                video_writer.write(res_img)
         video_writer.release()
 
 

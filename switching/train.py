@@ -83,7 +83,6 @@ def run_epoch(dataset, mode='train'):
         
         """1. Categorical Loss."""
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].contiguous()
-        #cat_loss = cat_crit(prob_pred.view(-1, 2), labels.view(-1,))
         if cfg.loss == 'cross_entropy':
             cat_loss = cross_entropy_loss(prob_pred.view(-1, 2), labels.view(-1,))
         elif cfg.loss == 'focal':

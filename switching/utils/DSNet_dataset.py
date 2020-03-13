@@ -167,10 +167,11 @@ class Dataset:
         for i in range(start, end, self.sub_sample):
             img_file = os.path.join(take_folder,'%06d.npz' % (i))
             imgs = np.load(img_file, allow_pickle=True)['imgs']
-            if self.mode != 'train':
+            imgs = np.rollaxis(imgs, 3, 1)
+            if self.mode != 'train' or True:
                 imgs = np.rollaxis(imgs, 3, 1)
             imgs_all.append(imgs)
-        if self.mode == 'train':
+        if self.mode == 'train' and False:
             imgs_all = self.augment(imgs_all)
         imgs_all = np.asarray(imgs_all)
         imgs_all = np.rollaxis(imgs_all, 0, 2)
