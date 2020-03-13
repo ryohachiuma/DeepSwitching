@@ -48,7 +48,7 @@ if args.iter > 0:
     cp_path = '%s/iter_%04d.p' % (cfg.model_dir, args.iter)
     logger.info('loading model from checkpoint: %s' % cp_path)
     model_cp = pickle.load(open(cp_path, "rb"))
-    dsnet.load_state_dict(model_cp['ds_net'], strict=True)
+    dsnet.load_state_dict(model_cp['ds_net'], strict=False)
 
 dsnet.to(device)
 class_weights = torch.tensor([0.2, 0.8], dtype=dtype, device=device)
@@ -133,26 +133,25 @@ if args.mode == 'train':
 
 
 elif args.mode == 'test':
-    dsnet.eval()
+    to_test(dsnet)
     dataset = Dataset(cfg, 'test', cfg.fr_num,  cfg.camera_num, 1, cfg.split, iter_method='iter', overlap=2*cfg.fr_margin, sub_sample=cfg.sub_sample)
     torch.set_grad_enabled(False)
 
     res_pred = {}
     res_orig = {}
-    take_start_ind = {}
+    take_ = {}
     res_pred_arr = []
     res_orig_arr = []
     meta_start_arr = []
     take = dataset.takes[0]
-    #take_start_ind[take] = dataset.fr_lb + fr_margin
     for imgs_np, labels_np, _ in dataset:
-        if not take in take_start_ind:
-            take_start_ind[take] = dataset.fr_lb + fr_margin
+        if not take in take_:
+            take_[take] = dataset.fr_lb + fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         prob_pred = dsnet(imgs)
         prob_pred = F.softmax(prob_pred[:, :, fr_margin: -fr_margin, :], dim=-1).cpu().numpy()
         select_prob = np.squeeze(prob_pred[:, :, :, 1])
-        select_ind = np.argmax(select_prob, axis=0)
+        select_ind = np.argmax(select_prob, axis=0) # along camera direction
         res_pred_arr.append(select_ind)
 
         select_ind_gt = np.argmax(np.squeeze(labels_np[:, :, fr_margin:-fr_margin]), axis=0)
@@ -163,9 +162,9 @@ elif args.mode == 'test':
             res_orig[take] = np.concatenate(res_orig_arr)
             res_pred_arr, res_orig_arr = [], []
             take = dataset.takes[dataset.cur_tid]
-            take_start_ind[take] = dataset.fr_lb + fr_margin
+            take_[take] = dataset.fr_lb + fr_margin
 
-    results = {'select_pred': res_pred, 'select_orig': res_orig, 'start_ind': take_start_ind}
+    results = {'select_pred': res_pred, 'select_orig': res_orig, '': take_}
     res_path = '%s/iter_%04d_%s.p' % (cfg.result_dir, args.iter, args.data)
     pickle.dump(results, open(res_path, 'wb'))
     logger.info('saved results to %s' % res_path)

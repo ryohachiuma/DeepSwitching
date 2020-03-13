@@ -9,6 +9,11 @@ import time
 import glob
 import numpy as np
 import cv2
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
+
 sys.path.append(os.getcwd())
 
 from switching.utils.DSNet_config import Config
@@ -75,15 +80,31 @@ if args.mode == 'vis':
 
 
 elif args.mode =='stats':
-    overall = 0.0
+    accuracy = 0.0
+    precision = 0.0
+    recall = 0.0
+    f1_s = 0.0
+    stat_mode = 'weighted'
     for take in cfg.takes[args.data]:
-        select_pred = sr_res['select_pred'][take]
-        select_gt = sr_res['select_orig'][take]
-        start_ind = sr_res['start_ind'][take]
+        select_pred = sr_res['select_pred'][take].astype(np.int64)
+        select_gt = sr_res['select_orig'][take].astype(np.int64)
 
-        acc = np.count_nonzero(select_pred == select_gt) / float(select_gt.shape[0])
-        print('take %s Accuracy: %.4f' % (take, acc))
-        overall += acc
+
+        acc = accuracy_score(select_gt, select_pred)
+        prec = precision_score(select_gt, select_pred, average=stat_mode)
+        rec = recall_score(select_gt, select_pred, average=stat_mode)
+        f1 = f1_score(select_gt, select_pred, average=stat_mode)
+
+        print('take %s Accuracy: %.4f Precision: %.4f Recall: %.4f F1: %.4f' % (take, acc, prec, rec, f1))
+        accuracy += acc
+        precision += prec
+        recall += rec
+        f1_s += f1
+
+    accuracy /=  len(cfg.takes[args.data])
+    precision /=  len(cfg.takes[args.data])
+    recall /=  len(cfg.takes[args.data])
+    f1_s /=  len(cfg.takes[args.data])
     print('-' * 50)
-    print('overall Accuracy : %.4f' % (overall / len(cfg.takes[args.data])))
+    print('overall Accuracy: %.4f Precision: %.4f Recall: %.4f F1: %.4f' % (accuracy, precision, recall, f1_s))
     print('-' * 50)
