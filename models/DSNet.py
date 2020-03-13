@@ -255,7 +255,7 @@ class DSNet_AR(nn.Module):
             if initial_sampling.sample():
                 prev_pred = gt_label[:, :, fr].view(-1,).unsqueeze(1).type(self.dtype)
             else:
-                prev_pred = self.softmax(pred.clone())[:, 1]
+                prev_pred = self.softmax(pred.clone())[:, 1].unsqueeze(1)
             logits.append(pred.view(-1, self.camera_num, 2))
         #frameNum, batch, cameraNum, 2 -> batch, cameraNum, framenum, 2
         logits = torch.stack(logits).permute(1, 2, 0, 3)
