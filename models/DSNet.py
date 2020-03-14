@@ -222,10 +222,10 @@ class DSNet_AR(nn.Module):
         self.v_net_type = v_net_type
         #self.v_net = RNN(cnn_fdim * 2, v_hdim, bi_dir=bi_dir)
         self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim // 2, batch_first=True, bidirectional=bi_dir)
-        self.mlp = ResidualMLP(v_hdim + 1, mlp_dim, 'leaky', is_dropout=is_dropout)
+        self.mlp = ResidualMLP(v_hdim + 2, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
-        self.scheduled_k = 0.998
+        self.scheduled_k = 0.996
 
 
     def forward(self, inputs, gt_label, _iter):
@@ -244,20 +244,23 @@ class DSNet_AR(nn.Module):
         seq_features, _ = self.v_net(cam_features)
 
         initial_sampling = torch.distributions.Bernoulli(tensor(math.pow(self.scheduled_k, _iter))) # exponential decay
-        prev_pred = gt_label[:, :, 0].view(-1,).unsqueeze(1).type(self.dtype)
+
+        inv_label = torch.abs(gt_label - 1)
+        gt_label = torch.stack([gt_label, inv_label], dim=-1)
+        prev_pred = gt_label[:, :, 0, :].view(-1, 2).type(self.dtype)
         logits = []
         for fr in range(fr_num):
             feat = seq_features[:, fr, :]
             ar_features = torch.cat([feat, prev_pred], dim=-1)
-            ar_features = ar_features.contiguous().view(-1, self.v_hdim + 1)
+            ar_features = ar_features.contiguous().view(-1, self.v_hdim + 2)
             #batch x cameraNum, mlp_dim[-1] 
             ar_features = self.mlp(ar_features)
             #batch, cameraNum, 2
             pred = self.linear(ar_features)
             if initial_sampling.sample() and self.training:
-                prev_pred = gt_label[:, :, fr].view(-1,).unsqueeze(1).type(self.dtype)
+                prev_pred = gt_label[:, :, fr, :].view(-1, 2).type(self.dtype)
             else:
-                prev_pred = self.softmax(pred.clone())[:, 1].unsqueeze(1)
+                prev_pred = self.softmax(pred.clone())
             logits.append(pred.view(-1, self.camera_num, 2))
         #frameNum, batch, cameraNum, 2 -> batch, cameraNum, framenum, 2
         logits = torch.stack(logits).permute(1, 2, 0, 3)
@@ -302,7 +305,6 @@ class DSNet_ARv3(nn.Module):
         seq_features, _ = self.v_net(cam_features)
 
         logits = []
-        
         prev_pred = torch.zeros((seq_features.size()[0], 2), dtype=self.dtype, device=self.device).fill_(0.5)
         for fr in range(fr_num):
             feat = seq_features[:, fr, :]
