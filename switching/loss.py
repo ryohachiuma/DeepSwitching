@@ -6,6 +6,86 @@ from torch.autograd import Function
 import numpy as np
 from torch.autograd import Variable
 
+def batched_cdist_l2(x1, x2):
+    x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
+    x2_norm = x2.pow(2).sum(dim=-1, keepdim=True)
+    res = torch.baddbmm(
+        x2_norm.transpose(-2, -1),
+        x1,
+        x2.transpose(-2, -1),
+        alpha=-2
+    ).add_(x1_norm).clamp_min_(1e-30).sqrt_()
+    return res
+
+def pairwise_distances(x, y=None):
+    '''
+    Input: x is a Nxd matrix
+           y is an optional Mxd matirx
+    Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
+            if y is not given then use 'y=x'.
+    i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
+    '''
+    x_norm = (x**2).sum(1).view(-1, 1)
+    if y is not None:
+        y_norm = (y**2).sum(1).view(1, -1)
+    else:
+        y = x
+        y_norm = x_norm.view(1, -1)
+
+    dist = x_norm + y_norm - 2.0 * torch.mm(x, torch.transpose(y, 0, 1))
+    return dist
+
+class ContrastiveLoss(nn.Module):
+    def __init__(self, margin, dtype, device, alpha=0.01):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+        self.alpha=alpha
+        self.eps = 1e-9
+        self.cont_loss = nn.CosineEmbeddingLoss(margin=self.margin)
+        self.dtype=dtype
+        self.device=device
+    #pred_features: batch, cameraNum, frameNum, feat_dim
+    #target: batch, cameraNum, frameNum
+    def forward(self, pred_features, target):
+        pred_features = pred_features.permute(0, 2, 1, 3).contiguous()
+        target = target.permute(0, 2, 1).contiguous()
+        batch_size, fr_num, cam_size, feat_size = pred_features.size()
+        mask = torch.eye(cam_size, cam_size, dtype=self.dtype, device=self.device).bool()
+
+        print(pred_features.size())
+        x = pred_features.view(-1, cam_size, feat_size)
+        dist_mat = torch.cdist(x, x, p=2)
+        select_ind = target.view(-1, cam_size).nonzero()[:, 1]
+        target_matrix = torch.ones([batch_size * fr_num, cam_size, cam_size], dtype=self.dtype, device=self.device)
+        target_matrix[:, select_ind, :] = 0
+        target_matrix[:, :, select_ind] = 0
+        loss = self.alpha * target_matrix * dist_mat + F.relu(self.margin - (1 - target_matrix) * dist_mat)
+        loss.masked_fill_(mask, 0)
+        loss = loss.view(-1, fr_num, cam_size, cam_size)
+        for i in range(fr_num):
+            print(loss[:, i, :, :])
+        print(loss.size())
+        '''
+        for i in range(fr_num):
+            x = pred_features[:, :, i, :].view(-1, cam_size, feat_size)
+            dist_mat = torch.cdist(x, x, p=2)
+            _t =  target[:, :, i]
+            select_ind = target[:, :, i].nonzero()[:, 1]
+            target_matrix = torch.ones([batch_size, cam_size, cam_size], dtype=self.dtype, device=self.device)
+            target_matrix[:, select_ind, :] = 0
+            target_matrix[:, :, select_ind] = 0
+
+            loss = self.alpha * target_matrix * dist_mat + F.relu(self.margin - (1 - target_matrix) * dist_mat)
+            loss.masked_fill_(mask, 0)
+
+            #loss = loss.view(-1, cam_size * cam_size)
+
+
+            print(loss)
+            print(loss.size())
+        '''
+            
+
 
 class FocalLoss(nn.Module):
     

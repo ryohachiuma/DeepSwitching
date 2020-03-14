@@ -8,6 +8,7 @@ from models.mlp import MLP
 from models.mlp import ResidualMLP
 from torchvision import models
 from torch.autograd import Variable
+import torch.nn.functional as F
 import math
 
 class Baseline(nn.Module):
@@ -321,6 +322,71 @@ class DSNet_ARv3(nn.Module):
         return logits
 
 
+class DSNet_AR_Cont(nn.Module):
+
+    def __init__(self, out_dim, v_hdim, cnn_fdim, dtype, device, frame_num=10, camera_num=3, frame_shape=(3, 224, 224), mlp_dim=(128, 64),
+                 v_net_type='lstm', v_net_param=None, bi_dir=False, training=True, is_dropout=False):
+        super().__init__()
+        self.out_dim = out_dim
+        self.cnn_fdim = cnn_fdim
+        self.v_hdim = v_hdim
+        self.frame_shape = frame_shape
+        self.camera_num = camera_num
+        self.cnn = ResNet(cnn_fdim, running_stats=training)
+        self.dtype = dtype
+        self.device = device
+
+        self.v_net_type = v_net_type
+        #self.v_net = RNN(cnn_fdim * 2, v_hdim, bi_dir=bi_dir)
+        self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim // 2, batch_first=True, bidirectional=bi_dir)
+        self.mlp = ResidualMLP(v_hdim + 2, mlp_dim, 'leaky', is_dropout=is_dropout)
+        self.linear = nn.Linear(self.mlp.out_dim, out_dim)
+        self.softmax = nn.Softmax(dim=1)
+        self.scheduled_k = 0.996
+
+    def forward(self, inputs, gt_label, _iter):
+        fr_num = inputs.size()[2]
+        #batch x cameraNum, framenum, cnn_fdim
+        local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, fr_num, self.cnn_fdim))
+        #batch, cameraNum, framenum, cnn_fdim
+        local_feat = local_feat.contiguous().view(-1, self.camera_num, fr_num, self.cnn_fdim)
+        #batch, 1, framenum, cnn_fdim
+        glob_feat = torch.max(local_feat, 1, keepdim=True)[0]
+        #batch, cameraNum, framenum, cnn_fdim
+        glob_feat = glob_feat.repeat(1, self.camera_num, 1, 1)
+        # batch x cameraNum, framenum, cnn_fdimx2 
+        cam_features = torch.cat([local_feat, glob_feat], -1).view(-1, fr_num, self.cnn_fdim * 2)
+        #batch x cameraNum, framenum, v_hdim
+        seq_features, _ = self.v_net(cam_features)
+
+        initial_sampling = torch.distributions.Bernoulli(tensor(math.pow(self.scheduled_k, _iter))) # exponential decay
+
+        inv_label = torch.abs(gt_label - 1)
+        gt_label = torch.stack([gt_label, inv_label], dim=-1)
+        prev_pred = gt_label[:, :, 0, :].view(-1, 2).type(self.dtype)
+        logits = []
+        features = []
+        for fr in range(fr_num):
+            feat = seq_features[:, fr, :]
+            ar_features = torch.cat([feat, prev_pred], dim=-1)
+            ar_features = ar_features.contiguous().view(-1, self.v_hdim + 2)
+            #batch x cameraNum, mlp_dim[-1] 
+            ar_features = self.mlp(ar_features)
+            features.append(F.normalize(ar_features, p=2, dim=-1).view(-1, self.camera_num, self.mlp.out_dim))
+            #batch, cameraNum, 2
+            pred = self.linear(ar_features)
+            if initial_sampling.sample() and self.training:
+                prev_pred = gt_label[:, :, fr, :].view(-1, 2).type(self.dtype)
+            else:
+                prev_pred = self.softmax(pred.clone())
+            logits.append(pred.view(-1, self.camera_num, 2))
+        #frameNum, batch, cameraNum, 2 -> batch, cameraNum, framenum, 2
+        logits = torch.stack(logits).permute(1, 2, 0, 3)
+        features = torch.stack(features).permute(1, 2, 0, 3)
+
+        return logits, features
+
+
 class DSNetv3(nn.Module):
 
     class ResNet(nn.Module):
@@ -532,7 +598,8 @@ models_func = {
 'baseline':Baseline,
 'baseline_seq':Baseline_seq,
 'baseline_spac':Baseline_spac,
-'DSNet_ConvAR':DSNet_ConvAR
+'DSNet_ConvAR':DSNet_ConvAR,
+'DSNet_AR_Cont': DSNet_AR_Cont,
 }
 
 if __name__ == '__main__':

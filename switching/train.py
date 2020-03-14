@@ -57,6 +57,7 @@ cat_crit = nn.NLLLoss(weight=class_weights)
 focal_crit = loss.FocalLoss()
 switch_crit = loss.SwitchingLoss()
 kl_crit = loss.SelectKLLoss()
+cont_crit = loss.ContrastiveLoss(margin=1.2, dtype=dtype, device=device)
 
 if cfg.optimizer == 'Adam':
     optimizer = torch.optim.Adam(dsnet.parameters(), lr=cfg.lr, weight_decay=cfg.weightdecay)
@@ -79,19 +80,27 @@ def run_epoch(dataset, mode='train'):
         t0 = time.time()
         imgs = tensor(imgs_np, dtype=dtype, device=device)
         labels = tensor(labels_np, dtype=torch.long, device=device)
-        if cfg.network == 'dsar' or cfg.network == 'DSNet_ConvAR':
+        if cfg.network == 'DSNet_AR_Cont':
+            prob_pred, pred_features = dsnet(imgs, labels, _iter['train'])
+        elif cfg.network == 'dsar' or cfg.network == 'DSNet_ConvAR':
             prob_pred = dsnet(imgs, labels, _iter['train'])
         else:
             prob_pred = dsnet(imgs)
         
-        """1. Categorical Loss."""
+
         prob_pred = prob_pred[:, :, fr_margin: -fr_margin, :].contiguous()
         labels_gt = labels[:, :, fr_margin:-fr_margin].contiguous()
-        if cfg.loss == 'cross_entropy':
-            cat_loss = cross_entropy_loss(prob_pred.view(-1, 2), labels_gt.view(-1,))
-        elif cfg.loss == 'focal':
+        if cfg.network == 'DSNet_AR_Cont':
+            pred_features = pred_features[:, :, fr_margin:-fr_margin, :]
             cat_loss = focal_crit(prob_pred.view(-1, 2), labels_gt.view(-1,))
-        loss = cat_loss.mean()
+            cont_crit(pred_features, labels_gt)
+
+        else:
+            if cfg.loss == 'cross_entropy':
+                cat_loss = cross_entropy_loss(prob_pred.view(-1, 2), labels_gt.view(-1,))
+            elif cfg.loss == 'focal':
+                cat_loss = focal_crit(prob_pred.view(-1, 2), labels_gt.view(-1,))
+            loss = cat_loss.mean()
 
         if mode == 'train':
             optimizer.zero_grad()
