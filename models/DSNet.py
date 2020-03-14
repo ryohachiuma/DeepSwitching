@@ -476,7 +476,7 @@ class DSNet_ConvAR(nn.Module):
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.sigmoid = nn.Sigmoid()
         self.gap = nn.AdaptiveAvgPool2d((1, 1))
-        self.scheduled_k = 0.998
+        self.scheduled_k = 0.997
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, inputs, gt_label, _iter):
