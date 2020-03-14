@@ -264,7 +264,6 @@ class DSNet_AR(nn.Module):
             logits.append(pred.view(-1, self.camera_num, 2))
         #frameNum, batch, cameraNum, 2 -> batch, cameraNum, framenum, 2
         logits = torch.stack(logits).permute(1, 2, 0, 3)
-
         return logits
 
 class DSNet_ARv3(nn.Module):

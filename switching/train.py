@@ -104,11 +104,12 @@ def run_epoch(dataset, mode='train'):
                     pickle.dump(model_cp, open(cp_path, 'wb'))
 
 
-        prob_pred = F.softmax(prob_pred, dim=-1).detach().cpu().numpy()
-        select_ind = np.argmax(prob_pred, axis=-1)
+        prob_pred = F.softmax(prob_pred, dim=-1).detach().cpu().numpy()[:, :, :, 1]
+        select_ind_pred = np.argmax(prob_pred, axis=1)
         label_gt = labels_np[:, :, fr_margin:-fr_margin]
-        assert select_ind.shape == label_gt.shape, 'shape should match!'
-        acc = np.count_nonzero(select_ind == label_gt) / float(label_gt.shape[0] * label_gt.shape[1] * label_gt.shape[2])
+        select_ind_gt = np.argmax(label_gt, axis=1)
+        assert select_ind_pred.shape == select_ind_gt.shape, 'shape should match!'
+        acc = np.count_nonzero(select_ind_pred == select_ind_gt) / float(select_ind_gt.shape[0] * select_ind_gt.shape[1])
         tb_logger.scalar_summary(loss_log[mode], [loss, acc], _iter[mode])  
         logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} acc {:.4f}'
                         .format(_iter[mode], time.time() - t0, loss, acc))
