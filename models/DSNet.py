@@ -474,11 +474,11 @@ class DSNet_ConvAR(nn.Module):
         self.v_net_type = v_net_type
 
         self.convlstm = ConvLSTM(self.cnn_fdim * 2, v_hdim // 2, (3,3), 1, True, True, False)
-        self.mlp = ResidualMLP(v_hdim + 1, mlp_dim, 'leaky', is_dropout=is_dropout)
+        self.mlp = ResidualMLP(v_hdim + 2, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.sigmoid = nn.Sigmoid()
         self.gap = nn.AdaptiveAvgPool2d((1, 1))
-        self.scheduled_k = 0.997
+        self.scheduled_k = 0.996
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, inputs, gt_label, _iter):
@@ -501,20 +501,22 @@ class DSNet_ConvAR(nn.Module):
         seq_features = torch.squeeze(self.gap(seq_features)).view(-1, fr_num, self.v_hdim)
 
         initial_sampling = torch.distributions.Bernoulli(tensor(math.pow(self.scheduled_k, _iter))) # exponential decay
-        prev_pred = gt_label[:, :, 0].view(-1,).unsqueeze(1).type(self.dtype)
+        inv_label = torch.abs(gt_label - 1)
+        gt_label = torch.stack([gt_label, inv_label], dim=-1)
+        prev_pred = gt_label[:, :, 0, :].view(-1, 2).type(self.dtype)
         logits = []
         for fr in range(fr_num):
             feat = seq_features[:, fr, :]
             ar_features = torch.cat([feat, prev_pred], dim=-1)
-            ar_features = ar_features.contiguous().view(-1, self.v_hdim + 1)
+            ar_features = ar_features.contiguous().view(-1, self.v_hdim + 2)
             #batch x cameraNum, mlp_dim[-1] 
             ar_features = self.mlp(ar_features)
             #batch, cameraNum, 2
             pred = self.linear(ar_features)
             if initial_sampling.sample() and self.training:
-                prev_pred = gt_label[:, :, fr].view(-1,).unsqueeze(1).type(self.dtype)
+                prev_pred = gt_label[:, :, fr, :].view(-1, 2).type(self.dtype)
             else:
-                prev_pred = self.softmax(pred.clone())[:, 1].unsqueeze(1)
+                prev_pred = self.softmax(pred.clone())
             logits.append(pred.view(-1, self.camera_num, 2))
         #frameNum, batch, cameraNum, 2 -> batch, cameraNum, framenum, 2
         logits = torch.stack(logits).permute(1, 2, 0, 3)
