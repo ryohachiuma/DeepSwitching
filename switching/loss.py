@@ -36,14 +36,13 @@ def pairwise_distances(x, y=None):
     return dist
 
 class ContrastiveLoss(nn.Module):
-    def __init__(self, margin, dtype, device, alpha=0.01):
+    def __init__(self, margin, dtype, device, alpha=10.0):
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
         self.alpha=alpha
-        self.eps = 1e-9
-        self.cont_loss = nn.CosineEmbeddingLoss(margin=self.margin)
         self.dtype=dtype
         self.device=device
+        
     #pred_features: batch, cameraNum, frameNum, feat_dim
     #target: batch, cameraNum, frameNum
     def forward(self, pred_features, target):
@@ -52,38 +51,42 @@ class ContrastiveLoss(nn.Module):
         batch_size, fr_num, cam_size, feat_size = pred_features.size()
         mask = torch.eye(cam_size, cam_size, dtype=self.dtype, device=self.device).bool()
 
-        print(pred_features.size())
         x = pred_features.view(-1, cam_size, feat_size)
         dist_mat = torch.cdist(x, x, p=2)
         select_ind = target.view(-1, cam_size).nonzero()[:, 1]
         target_matrix = torch.ones([batch_size * fr_num, cam_size, cam_size], dtype=self.dtype, device=self.device)
         target_matrix[:, select_ind, :] = 0
         target_matrix[:, :, select_ind] = 0
-        loss = self.alpha * target_matrix * dist_mat + F.relu(self.margin - (1 - target_matrix) * dist_mat)
+        loss = target_matrix * dist_mat + self.alpha * (1 - target_matrix) * F.relu(self.margin - dist_mat)
         loss.masked_fill_(mask, 0)
-        loss = loss.view(-1, fr_num, cam_size, cam_size)
-        for i in range(fr_num):
-            print(loss[:, i, :, :])
-        print(loss.size())
+        loss = loss[:, torch.triu(torch.ones(cam_size, cam_size)) == 1]
+        return loss.mean()
         '''
+        print(loss)
+        _loss = loss.view(-1, fr_num, cam_size, cam_size)
+
+
+        
         for i in range(fr_num):
-            x = pred_features[:, :, i, :].view(-1, cam_size, feat_size)
+            x = pred_features[:, i, :, :].view(-1, cam_size, feat_size)
             dist_mat = torch.cdist(x, x, p=2)
-            _t =  target[:, :, i]
-            select_ind = target[:, :, i].nonzero()[:, 1]
+            select_ind = target[:, i, :].nonzero()[:, 1]
+            print(select_ind)
             target_matrix = torch.ones([batch_size, cam_size, cam_size], dtype=self.dtype, device=self.device)
             target_matrix[:, select_ind, :] = 0
             target_matrix[:, :, select_ind] = 0
+            print(target_matrix)
 
-            loss = self.alpha * target_matrix * dist_mat + F.relu(self.margin - (1 - target_matrix) * dist_mat)
+            loss = target_matrix * dist_mat + self.alpha * (1 - target_matrix) * F.relu(self.margin - dist_mat)
             loss.masked_fill_(mask, 0)
 
             #loss = loss.view(-1, cam_size * cam_size)
 
 
             print(loss)
-            print(loss.size())
+            print(_loss[:, i, :, :])
         '''
+        
             
 
 

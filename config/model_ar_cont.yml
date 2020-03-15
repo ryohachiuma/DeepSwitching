@@ -1,6 +1,6 @@
 seed: 1
 network: 'DSNet_AR_Cont'
-fr_num: 20
+fr_num: 60
 v_hdim: 128
 mlp_dim: [128, 64]
 cnn_fdim: 128
@@ -11,7 +11,7 @@ save_model_interval: 100
 num_sample: 50000
 sub_sample: 5
 fr_margin: 3
-batch_size: 2
+batch_size: 1
 bi_dir: true
 loss: 'focal'
 iter_method: 'sample'

@@ -68,7 +68,10 @@ fr_margin = cfg.fr_margin
 
 logger_str = {'train': "Training: ", 'val': "Validation: "}
 _iter = {'train': 0, 'val': 0}
-loss_log = {'train': ['loss', 'acc'], 'val': ['val_loss', 'val_acc']}
+if cfg.network == 'DSNet_AR_Cont':
+    loss_log = {'train': ['cat_loss','cont_loss', 'acc'], 'val': ['val_cat_loss','val_cont_loss', 'val_acc']}
+else:
+    loss_log = {'train': ['loss', 'acc'], 'val': ['val_loss', 'val_acc']}
 
 def run_epoch(dataset, mode='train'):
     global dsnet, optimizer, focal_crit, switch_crit, kl_crit, _iter
@@ -93,8 +96,8 @@ def run_epoch(dataset, mode='train'):
         if cfg.network == 'DSNet_AR_Cont':
             pred_features = pred_features[:, :, fr_margin:-fr_margin, :]
             cat_loss = focal_crit(prob_pred.view(-1, 2), labels_gt.view(-1,))
-            cont_crit(pred_features, labels_gt)
-
+            cont_loss = cont_crit(pred_features, labels_gt)
+            loss = cat_loss.mean() + 0.25 * cont_loss
         else:
             if cfg.loss == 'cross_entropy':
                 cat_loss = cross_entropy_loss(prob_pred.view(-1, 2), labels_gt.view(-1,))
@@ -119,9 +122,15 @@ def run_epoch(dataset, mode='train'):
         select_ind_gt = np.argmax(label_gt, axis=1)
         assert select_ind_pred.shape == select_ind_gt.shape, 'shape should match!'
         acc = np.count_nonzero(select_ind_pred == select_ind_gt) / float(select_ind_gt.shape[0] * select_ind_gt.shape[1])
-        tb_logger.scalar_summary(loss_log[mode], [loss, acc], _iter[mode])  
-        logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} acc {:.4f}'
-                        .format(_iter[mode], time.time() - t0, loss, acc))
+
+        if cfg.network == 'DSNet_AR_Cont':
+            tb_logger.scalar_summary(loss_log[mode], [cat_loss.mean(), cont_loss, acc], _iter[mode])
+            logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}  loss {:.4f}  cat_loss {:.4f} cont_loss {:.4f}    acc {:.4f}'
+                        .format(_iter[mode], time.time() - t0, loss, cat_loss.mean(), cont_loss, acc))
+        else:
+            tb_logger.scalar_summary(loss_log[mode], [loss, acc], _iter[mode])
+            logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} acc {:.4f}'
+                            .format(_iter[mode], time.time() - t0, loss, acc))
         _iter[mode]+=1
 
 

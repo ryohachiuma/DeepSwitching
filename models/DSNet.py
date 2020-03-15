@@ -337,12 +337,11 @@ class DSNet_AR_Cont(nn.Module):
         self.device = device
 
         self.v_net_type = v_net_type
-        #self.v_net = RNN(cnn_fdim * 2, v_hdim, bi_dir=bi_dir)
         self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim // 2, batch_first=True, bidirectional=bi_dir)
         self.mlp = ResidualMLP(v_hdim + 2, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
-        self.scheduled_k = 0.996
+        self.scheduled_k = 0.998
 
     def forward(self, inputs, gt_label, _iter):
         fr_num = inputs.size()[2]
