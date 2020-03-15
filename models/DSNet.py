@@ -226,7 +226,7 @@ class DSNet_AR(nn.Module):
         self.mlp = ResidualMLP(v_hdim + 2, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
-        self.scheduled_k = 0.996
+        self.scheduled_k = 0.998
 
 
     def forward(self, inputs, gt_label, _iter):
@@ -543,7 +543,7 @@ class DSNet_ConvAR(nn.Module):
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.sigmoid = nn.Sigmoid()
         self.gap = nn.AdaptiveAvgPool2d((1, 1))
-        self.scheduled_k = 0.996
+        self.scheduled_k = 0.998
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, inputs, gt_label, _iter):

@@ -48,17 +48,18 @@ class ResidualMLP(nn.Module):
             if idx == 0:
                 self.affine_layers.append(nn.Linear(input_dim, nh))  
             else:
-                self.affine_layers.append(nn.Linear(last_dim + input_dim, nh))  
+                self.affine_layers.append(nn.Linear(last_dim + 2, nh))  
             last_dim = nh
         self.dropout = is_dropout
         self.dp = nn.Dropout(p=0.5)
 
     def forward(self, _input):
+        prob = _input[:, -2:]
         for idx, affine in enumerate(self.affine_layers):
             if idx == 0:
                 x = self.activation(affine(_input))
             else:
-                x = self.activation(affine(torch.cat([x, _input], dim=-1)))
+                x = self.activation(affine(torch.cat([x, prob], dim=-1)))
             if idx == 1:
                 x = self.dp(x)
         return x
