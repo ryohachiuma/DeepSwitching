@@ -159,10 +159,11 @@ elif args.mode == 'test':
     dataset = Dataset(cfg, 'test', cfg.fr_num,  cfg.camera_num, 1, cfg.split, iter_method='iter', overlap=2*cfg.fr_margin, sub_sample=cfg.sub_sample)
     print(dataset.takes)
     torch.set_grad_enabled(False)
-
+    res_pred_raw = {}
     res_pred = {}
     res_orig = {}
     take_ = {}
+    res_pred_raw_arr = []
     res_pred_arr = []
     res_orig_arr = []
     meta_start_arr = []
@@ -175,20 +176,24 @@ elif args.mode == 'test':
         prob_pred = dsnet(imgs)
         prob_pred = F.softmax(prob_pred[:, :, fr_margin: -fr_margin, :], dim=-1).cpu().numpy()
         select_prob = np.squeeze(prob_pred[:, :, :, 1])
+        
         select_ind = np.argmax(select_prob, axis=0) # along camera direction
+        res_pred_raw_arr.append(select_prob.transpose())
         res_pred_arr.append(select_ind)
 
         select_ind_gt = np.argmax(np.squeeze(labels_np[:, :, fr_margin:-fr_margin]), axis=0)
+        print(select_ind_gt.shape)
         res_orig_arr.append(select_ind_gt)
 
         if dataset.cur_ind >= len(dataset.takes) or dataset.takes[dataset.cur_tid] != take:
+            res_pred_raw[take] = np.concatenate(res_pred_raw_arr)
             res_pred[take] = np.concatenate(res_pred_arr)
             res_orig[take] = np.concatenate(res_orig_arr)
-            res_pred_arr, res_orig_arr = [], []
+            res_pred_raw_arr, res_pred_arr, res_orig_arr = [], [], []
             take = dataset.takes[dataset.cur_tid]
             take_[take] = dataset.fr_lb + fr_margin
 
-    results = {'select_pred': res_pred, 'select_orig': res_orig, '': take_}
+    results = {'raw_prob': res_pred_raw, 'select_pred': res_pred, 'select_orig': res_orig, 'start_ind': take_}
     res_path = '%s/iter_%04d_%s.p' % (cfg.result_dir, args.iter, args.data)
     pickle.dump(results, open(res_path, 'wb'))
     logger.info('saved results to %s' % res_path)

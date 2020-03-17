@@ -371,14 +371,17 @@ class DSNet_AR_Cont(nn.Module):
             ar_features = ar_features.contiguous().view(-1, self.v_hdim + 2)
             #batch x cameraNum, mlp_dim[-1] 
             ar_features = self.mlp(ar_features)
-            features.append(F.normalize(ar_features, p=2, dim=-1).view(-1, self.camera_num, self.mlp.out_dim))
             #batch, cameraNum, 2
             pred = self.linear(ar_features)
+            
+
             if initial_sampling.sample() and self.training:
                 prev_pred = gt_label[:, :, fr, :].view(-1, 2).type(self.dtype)
             else:
                 prev_pred = self.softmax(pred.clone())
+                
             logits.append(pred.view(-1, self.camera_num, 2))
+            features.append(F.normalize(ar_features, p=2, dim=-1).view(-1, self.camera_num, self.mlp.out_dim))
         #frameNum, batch, cameraNum, 2 -> batch, cameraNum, framenum, 2
         logits = torch.stack(logits).permute(1, 2, 0, 3)
         features = torch.stack(features).permute(1, 2, 0, 3)
