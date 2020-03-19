@@ -83,8 +83,8 @@ if args.mode == 'vis':
             np.savetxt(out_csv_dir, save_array, fmt='%d', delimiter=',')
 
         elif args.show_type == 'prob':
-            plt.rcParams["font.size"] = 18
-            fig = plt.figure(figsize=(12.0, 5.5), dpi=600)
+            plt.rcParams["font.size"] = 17
+            fig = plt.figure(figsize=(12.0, 5.5), dpi=300)
             select_prob = sr_res['raw_prob'][take]
             #select_prob = np.repeat(select_prob, 5, axis=0)
             ax = plt.axes(xlim=(0, select_prob.shape[0]), ylim=(0, 1.0)) 
@@ -127,16 +127,14 @@ if args.mode == 'vis':
                     minx+=1
                     maxx+=1
                 ax.set_xlim(minx, maxx)
-                #ax.set_xlabel("frame")
-                #ax.set_ylabel("selection probability")
-                #ax.axes.set_aspect('equal', adjustable='datalim')
+
                 return lines, circles
-            plt.tight_layout()
+            #plt.tight_layout()
             anim = animation.FuncAnimation(fig, animate, init_func=init,
                                frames=seq_len, interval=0)
             #
-            plt.show()
-            #anim.save('test.mp4', writer='ffmpeg', fps=12)
+            #plt.show()
+            anim.save('test.mp4', writer='ffmpeg', fps=12)
             #exit(0)
                     
 
