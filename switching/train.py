@@ -25,9 +25,10 @@ parser.add_argument('--mode', default='train')
 parser.add_argument('--data', default='train')
 parser.add_argument('--gpu-index', type=int, default=0)
 parser.add_argument('--iter', type=int, default=0)
+parser.add_argument('--setting', type=int, default=0) # Applied only for sequence-out setting
 
 args = parser.parse_args()
-cfg = Config(args.cfg, create_dirs=(args.iter == 0))
+cfg = Config(args.cfg, create_dirs=(args.iter == 0), setting_id=args.setting)
 
 """setup"""
 dtype = torch.float64
@@ -144,8 +145,10 @@ if args.mode == 'train':
     to_train(dsnet)
 
     """Dataset"""
-    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.split, iter_method=cfg.iter_method, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, num_sample=cfg.num_sample, sub_sample=cfg.sub_sample)
-    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, cfg.split, iter_method='iter', overlap=2*cfg.fr_margin, sub_sample=cfg.sub_sample)
+    tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.split, \
+        iter_method=cfg.iter_method, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, \
+            num_sample=cfg.num_sample, sub_sample=cfg.sub_sample, setting_id=args.setting)
+    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, cfg.split, iter_method='iter', overlap=2*cfg.fr_margin, sub_sample=cfg.sub_sample, setting_id=args.setting)
     
     for _ in range(args.iter // cfg.num_sample, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')

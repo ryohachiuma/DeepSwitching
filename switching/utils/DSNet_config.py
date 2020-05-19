@@ -5,7 +5,7 @@ from utils import recreate_dirs
 
 class Config:
 
-    def __init__(self, cfg_id, create_dirs=False):
+    def __init__(self, cfg_id, create_dirs=False, setting_id=0):
         self.id = cfg_id
         cfg_name = 'config/%s.yml' % cfg_id
         if not os.path.exists(cfg_name):
@@ -21,7 +21,7 @@ class Config:
         # create dirs
         self.base_dir = 'results'
         self.data_dir = cfg.get('dataset_path', 'datasets')
-        self.cfg_dir = '%s/%s' % (self.base_dir, cfg_id)
+        self.cfg_dir = '%s/%s/%s' % (self.base_dir, cfg_id, str(setting_id))
         self.model_dir = '%s/models' % self.cfg_dir
         self.result_dir = '%s/results' % self.cfg_dir
         self.log_dir = '%s/log' % self.cfg_dir

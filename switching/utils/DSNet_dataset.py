@@ -5,9 +5,11 @@ import math
 import pickle
 import cv2
 
+from itertools import permutations 
+
 class Dataset:
 
-    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, split, iter_method='sample', frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000, sub_sample=5):
+    def __init__(self, cfg, mode, fr_num, camera_num, batch_size, split, iter_method='sample', frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000, sub_sample=5, setting_id=0):
         self.cfg = cfg
         self.mode = mode
         self.split = split
@@ -34,10 +36,18 @@ class Dataset:
             else:
                 self.takes = self.cfg.takes[mode]
         elif self.split == 'surgery':
+            _takes = self.cfg.takes['train']
+            perm = list(permutations(range(len(_takes)), 2))
+            t_ind1, t_ind2 = perm[setting_id]
+            self.takes = []
             if mode == 'train':
-                self.takes = self.cfg.takes[mode]
+                for idx, t in enumerate(_takes):
+                    if idx != t_ind1 and idx != t_ind2:
+                        self.takes.append(t)
             else:
-                self.takes = self.cfg.takes['test']
+                for idx, t in enumerate(_takes):
+                    if idx == t_ind1 or idx == t_ind2:
+                        self.takes.append(t)
         # iterator specific
         self.sample_count = None
         self.take_indices = None
@@ -51,10 +61,24 @@ class Dataset:
         self.labels = []
         self.load_labels()
 
+        if self.split == 'sequence':
+            self.lookup_table = []
+            for _len in self.seq_len:
+                original = np.arange(_len)
+                permute = np.arange(_len)
+                if setting_id == 0:
+                    permute = permute
+                else:
+                    permute[int(_len*0.8):_len], permute[int(_len*0.2*setting_id):int(_len*0.2*(setting_id+1))] = \
+                        permute[int(_len*0.2*setting_id):int(_len*0.2*(setting_id+1))].copy(), permute[int(_len*0.8):_len].copy()
+                self.lookup_table.append(np.concatenate((original, permute)))
+
     def load_labels(self):
         for take in self.takes:
             label_file = os.path.join(self.label_folder, take + '.csv')
             label = np.loadtxt(label_file, dtype=int, delimiter=',')[1:, 1] # only load ground truth
+            _len = (len(label) // 5) * 5
+            label = label[:_len]       
             self.labels.append(label)
             self.seq_len.append(len(label.tolist()))
 
@@ -163,7 +187,11 @@ class Dataset:
         take_folder = '%s/%s' % (self.image_folder, self.takes[take_ind])
         imgs_all = []
         for i in range(start, end, self.sub_sample):
-            img_file = os.path.join(take_folder,'%06d.npz' % (i))
+            if self.split == 'sequence':
+                img_ind = self.lookup_table[take_ind][i]
+            else:
+                img_ind = i
+            img_file = os.path.join(take_folder,'%06d.npz' % (img_ind))
             imgs = np.load(img_file, allow_pickle=True)['imgs']
             imgs = np.rollaxis(imgs, 3, 1)
             if self.mode != 'train' or True:
