@@ -148,11 +148,9 @@ if args.mode == 'train':
     tr_dataset = Dataset(cfg, 'train', cfg.fr_num, cfg.camera_num, cfg.batch_size, cfg.split, \
         iter_method=cfg.iter_method, shuffle=cfg.shuffle, overlap=2*cfg.fr_margin, \
             num_sample=cfg.num_sample, sub_sample=cfg.sub_sample, setting_id=args.setting)
-    val_dataset = Dataset(cfg, 'val', cfg.fr_num,  cfg.camera_num,              1, cfg.split, iter_method='iter', overlap=2*cfg.fr_margin, sub_sample=cfg.sub_sample, setting_id=args.setting)
     
     for _ in range(args.iter // cfg.num_sample, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
-        run_epoch(val_dataset, mode='val')
 
 
 
