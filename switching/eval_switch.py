@@ -30,12 +30,13 @@ parser.add_argument('--mode', default='vis')
 parser.add_argument('--iter', type=int, default=0)
 parser.add_argument('--data', default='test')
 parser.add_argument('--show-type', default='compare', help='compare, selected, raw or image')
+parser.add_argument('--setting', type=int, default=0)
 
 args = parser.parse_args()
 
 cfg = Config(args.cfg)
 res_base_dir = 'results'
-sr_res_path = '%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, args.iter, args.data)
+sr_res_path = '%s/%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, str(args.setting), args.iter, args.data)
 sr_res = pickle.load(open(sr_res_path, 'rb'))
 
 
