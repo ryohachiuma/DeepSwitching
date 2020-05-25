@@ -30,14 +30,12 @@ parser.add_argument('--mode', default='vis')
 parser.add_argument('--iter', type=int, default=0)
 parser.add_argument('--data', default='test')
 parser.add_argument('--show-type', default='compare', help='compare, selected, raw or image')
-parser.add_argument('--setting', type=int, default=0)
 
 args = parser.parse_args()
 
 cfg = Config(args.cfg)
 res_base_dir = 'results'
-sr_res_path = '%s/%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, str(args.setting), args.iter, args.data)
-sr_res = pickle.load(open(sr_res_path, 'rb'))
+
 
 
 
@@ -176,27 +174,45 @@ elif args.mode =='stats':
     precision = 0.0
     recall = 0.0
     f1_s = 0.0
+    f1_seq = {'surgery_01': 0.0, 'surgery_02': 0.0, 'surgery_03': 0.0, 'surgery_04': 0.0, 'surgery_05': 0.0, 'surgery_06': 0.0}
     stat_mode = 'weighted'
-    for take in cfg.takes[args.data]:
-        select_pred = sr_res['select_pred'][take].astype(np.int64)
-        select_gt = sr_res['select_orig'][take].astype(np.int64)
+
+    for c in range(5):
+        
+        if c == 2:
+            sr_res_path = '%s/%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, str(c), 8000, args.data)
+        else:
+            sr_res_path = '%s/%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, str(c), args.iter, args.data)
+        '''
+        sr_res_path = '%s/%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, str(c), args.iter, args.data)
+        '''
+        sr_res = pickle.load(open(sr_res_path, 'rb'))
+        for take in cfg.takes[args.data]:
+            select_pred = sr_res['select_pred'][take].astype(np.int64)
+            select_gt = sr_res['select_orig'][take].astype(np.int64)
 
 
-        acc = accuracy_score(select_gt, select_pred)
-        prec = precision_score(select_gt, select_pred, average=stat_mode)
-        rec = recall_score(select_gt, select_pred, average=stat_mode)
-        f1 = f1_score(select_gt, select_pred, average=stat_mode)
+            acc = accuracy_score(select_gt, select_pred)
+            prec = precision_score(select_gt, select_pred, average=stat_mode)
+            rec = recall_score(select_gt, select_pred, average=stat_mode)
+            f1 = f1_score(select_gt, select_pred, average=stat_mode)
 
-        print('take %s Accuracy: %.4f Precision: %.4f Recall: %.4f F1: %.4f' % (take, acc, prec, rec, f1))
-        accuracy += acc
-        precision += prec
-        recall += rec
-        f1_s += f1
+            print('take %s setting %s Accuracy: %.4f Precision: %.4f Recall: %.4f F1: %.4f' % (take, str(c), acc, prec, rec, f1))
+            accuracy += acc
+            precision += prec
+            recall += rec
+            f1_s += f1
+            f1_seq[take] += f1
 
-    accuracy /=  len(cfg.takes[args.data])
-    precision /=  len(cfg.takes[args.data])
-    recall /=  len(cfg.takes[args.data])
-    f1_s /=  len(cfg.takes[args.data])
+    accuracy  /=  (len(cfg.takes[args.data]) * 5)
+    precision /=  (len(cfg.takes[args.data]) * 5)
+    recall    /=  (len(cfg.takes[args.data]) * 5)
+    f1_s      /=  (len(cfg.takes[args.data]) * 5)
+
+    for key in f1_seq.keys():
+        f1_seq[key] /= 5
+
     print('-' * 50)
     print('overall Accuracy: %.4f Precision: %.4f Recall: %.4f F1: %.4f' % (accuracy, precision, recall, f1_s))
     print('-' * 50)
+    print(f1_seq)
