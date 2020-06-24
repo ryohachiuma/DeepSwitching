@@ -178,14 +178,14 @@ elif args.mode =='stats':
     stat_mode = 'weighted'
 
     for c in range(5):
-        
+        '''
         if c == 2:
             sr_res_path = '%s/%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, str(c), 8000, args.data)
         else:
             sr_res_path = '%s/%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, str(c), args.iter, args.data)
         '''
         sr_res_path = '%s/%s/%s/results/iter_%04d_%s.p' % (res_base_dir, args.cfg, str(c), args.iter, args.data)
-        '''
+        
         sr_res = pickle.load(open(sr_res_path, 'rb'))
         for take in cfg.takes[args.data]:
             select_pred = sr_res['select_pred'][take].astype(np.int64)

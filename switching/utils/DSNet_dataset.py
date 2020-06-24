@@ -140,8 +140,9 @@ class Dataset:
                 ignore_range = np.array(range(ignore[0] - self.fr_num * self.sub_sample, ignore[1]))
                 orig_list = np.setdiff1d(orig_list, ignore_range)
 
+            np.random.shuffle(orig_list)
             
-            fr_start = np.random.shuffle(orig_list)[0]
+            fr_start = orig_list[0]
             fr_end = fr_start + self.fr_num * self.sub_sample
 
 
