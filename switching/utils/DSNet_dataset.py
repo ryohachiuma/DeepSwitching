@@ -29,10 +29,13 @@ class Dataset:
         self.image_folder = os.path.join(self.base_folder, 'frames')
         self.label_folder = os.path.join(self.base_folder, 'labels')
 
+        self.ignore_index = cfg.ignore_index
+
         # get take names
         if self.split == 'sequence':
             if mode == 'train' or mode == 'val':
                 self.takes = self.cfg.takes['train']
+                self.ignore_index = 
             else:
                 self.takes = self.cfg.takes[mode]
         elif self.split == 'surgery':
@@ -118,6 +121,8 @@ class Dataset:
             _len = self.seq_len[self.cur_tid]
             self.fr_lb, self.fr_ub = self.get_lb_ub(_len)
             self.cur_fr = self.fr_lb
+            self.ignore_indices = np.asarray(self.ignore_index[self.takes[self.cur_tid]])
+
 
     def sample(self):
         labels = []
@@ -126,11 +131,21 @@ class Dataset:
         for _ in range(self.batch_size):
             self.sample_count += self.fr_num - self.overlap
             take_ind = np.random.randint(len(self.takes))
+            ignore_indices = np.asarray(self.ignore_index[self.takes[take_ind]])
             seq_len = self.seq_len[take_ind]
             fr_lb, fr_ub = self.get_lb_ub(seq_len)
 
-            fr_start = np.random.randint(fr_lb, fr_ub - self.fr_num * self.sub_sample)
+            orig_list = np.array(range(fr_lb, fr_ub - self.fr_num * self.sub_sample))
+
+            for ignore in ignore_indices:
+                ignore_range = np.array(range(ignore[0] - self.fr_num * self.sub_sample, ignore[1]))
+                orig_list = np.setdiff1d(orig_list, ignore_range)
+
+            
+            fr_start = np.random.shuffle(orig_list)[0]
             fr_end = fr_start + self.fr_num * self.sub_sample
+
+
 
             img = self.load_imgs(take_ind, fr_start, fr_end)
             label = self.convert_label(take_ind, fr_start, fr_end)
@@ -150,13 +165,19 @@ class Dataset:
         elif self.iter_method == 'iter':
             if self.cur_ind >= len(self.takes):
                 raise StopIteration
-
+            ignore_indices = 
             fr_start = self.cur_fr
             fr_end = self.cur_fr + self.fr_num * self.sub_sample if self.cur_fr + self.fr_num * self.sub_sample + 10 < self.fr_ub else self.fr_ub
             img = self.load_imgs(self.cur_tid, fr_start, fr_end)
             label = self.convert_label(self.cur_tid, fr_start, fr_end)
             switch_label = self.convert_label_switch(self.cur_tid, fr_start, fr_end)
-            self.cur_fr = fr_end - self.overlap
+
+            for ind in self.ignore_indices:
+                if ind[0] <= fr_end - self.overlap and ind[1] >= fr_end - self.overlap:
+                    self.cur_fr = ind[1] + 1
+                    break
+                else:
+                    self.cur_fr = fr_end - self.overlap
 
             if fr_end == self.fr_ub:
                 self.__next_take()

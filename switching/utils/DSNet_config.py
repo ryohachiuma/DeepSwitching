@@ -15,6 +15,7 @@ class Config:
         self.split = cfg.get('split', 'sequence')
         self.data_dir = './datasets'
         self.meta = yaml.load(open('%s/meta/meta_%s.yml' % (self.data_dir, self.split), 'r'), Loader=yaml.FullLoader)
+        self.ignore_index = yaml.load(open('%s/meta/invalid.yaml' % (self.data_dir)), Loader=yaml.FullLoader)
         self.camera_num = self.meta['camera_num']
         self.takes = {x: self.meta[x] for x in ['train', 'test', 'val']}
 
