@@ -151,6 +151,8 @@ if args.mode == 'train':
     
     for _ in range(args.iter // cfg.num_sample, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
+        if _iter['train'] == 6000:
+            exit(0)
 
 
 
