@@ -35,7 +35,6 @@ class Dataset:
         if self.split == 'sequence':
             if mode == 'train' or mode == 'val':
                 self.takes = self.cfg.takes['train']
-                self.ignore_index = 
             else:
                 self.takes = self.cfg.takes[mode]
         elif self.split == 'surgery':
@@ -165,7 +164,6 @@ class Dataset:
         elif self.iter_method == 'iter':
             if self.cur_ind >= len(self.takes):
                 raise StopIteration
-            ignore_indices = 
             fr_start = self.cur_fr
             fr_end = self.cur_fr + self.fr_num * self.sub_sample if self.cur_fr + self.fr_num * self.sub_sample + 10 < self.fr_ub else self.fr_ub
             img = self.load_imgs(self.cur_tid, fr_start, fr_end)
@@ -173,8 +171,8 @@ class Dataset:
             switch_label = self.convert_label_switch(self.cur_tid, fr_start, fr_end)
 
             for ind in self.ignore_indices:
-                if ind[0] <= fr_end - self.overlap and ind[1] >= fr_end - self.overlap:
-                    self.cur_fr = ind[1] + 1
+                if ind[0] <= fr_end - self.overlap and ind[1] >= fr_end + self.overlap:
+                    self.cur_fr = ind[1] + self.overlap
                     break
                 else:
                     self.cur_fr = fr_end - self.overlap
