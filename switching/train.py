@@ -133,7 +133,9 @@ def run_epoch(dataset, mode='train'):
             logger.info(logger_str[mode] + 'iter {:6d}    time {:.2f}    loss {:.4f} acc {:.4f}'
                             .format(_iter[mode], time.time() - t0, loss, acc))
         _iter[mode]+=1
-
+        
+        if _iter['train'] == 6000:
+            exit(0)
 
         """clean up gpu memory"""
         torch.cuda.empty_cache()
@@ -151,8 +153,7 @@ if args.mode == 'train':
     
     for _ in range(args.iter // cfg.num_sample, cfg.num_epoch):
         run_epoch(tr_dataset, mode='train')
-        if _iter['train'] == 6000:
-            exit(0)
+
 
 
 
