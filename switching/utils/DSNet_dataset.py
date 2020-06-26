@@ -30,10 +30,10 @@ class Dataset:
         self.label_folder = os.path.join(self.base_folder, 'labels')
 
         
-
+        self.ignore_index = cfg.ignore_index
         # get take names
         if self.split == 'sequence':
-            self.ignore_index = cfg.ignore_index
+            
             if mode == 'train' or mode == 'val':
                 self.takes = self.cfg.takes['train']
             else:
@@ -43,16 +43,13 @@ class Dataset:
             perm = list(permutations(range(len(_takes)), 2))
             t_ind1, t_ind2 = perm[setting_id]
             self.takes = []
-            self.ignore_index = []
             if mode == 'train':
                 for idx, t in enumerate(_takes):
                     if idx != t_ind1 and idx != t_ind2:
-                        self.ignore_index.append(cfg.ignore_index[t])
                         self.takes.append(t)
             else:
                 for idx, t in enumerate(_takes):
                     if idx == t_ind1 or idx == t_ind2:
-                        self.ignore_index.append(cfg.ignore_index[t])
                         self.takes.append(t)
         # iterator specific
         self.sample_count = None
@@ -134,7 +131,10 @@ class Dataset:
         for _ in range(self.batch_size):
             self.sample_count += self.fr_num - self.overlap
             take_ind = np.random.randint(len(self.takes))
-            ignore_indices = np.asarray(self.ignore_index[self.takes[take_ind]])
+            if self.split == 'sequence':
+                ignore_indices = np.asarray(self.ignore_index[self.takes[take_ind]])
+            else:
+                ignore_indices = np.asarray(self.ignore_index[take_ind])
             seq_len = self.seq_len[take_ind]
             fr_lb, fr_ub = self.get_lb_ub(seq_len)
 
