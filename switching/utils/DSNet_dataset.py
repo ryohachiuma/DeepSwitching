@@ -131,10 +131,7 @@ class Dataset:
         for _ in range(self.batch_size):
             self.sample_count += self.fr_num - self.overlap
             take_ind = np.random.randint(len(self.takes))
-            if self.split == 'sequence':
-                ignore_indices = np.asarray(self.ignore_index[self.takes[take_ind]])
-            else:
-                ignore_indices = np.asarray(self.ignore_index[take_ind])
+            ignore_indices = np.asarray(self.ignore_index[self.takes[take_ind]])
             seq_len = self.seq_len[take_ind]
             fr_lb, fr_ub = self.get_lb_ub(seq_len)
 
