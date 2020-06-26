@@ -29,10 +29,11 @@ class Dataset:
         self.image_folder = os.path.join(self.base_folder, 'frames')
         self.label_folder = os.path.join(self.base_folder, 'labels')
 
-        self.ignore_index = cfg.ignore_index
+        
 
         # get take names
         if self.split == 'sequence':
+            self.ignore_index = cfg.ignore_index
             if mode == 'train' or mode == 'val':
                 self.takes = self.cfg.takes['train']
             else:
@@ -42,13 +43,16 @@ class Dataset:
             perm = list(permutations(range(len(_takes)), 2))
             t_ind1, t_ind2 = perm[setting_id]
             self.takes = []
+            self.ignore_index = []
             if mode == 'train':
                 for idx, t in enumerate(_takes):
                     if idx != t_ind1 and idx != t_ind2:
+                        self.ignore_index.append(cfg.ignore_index[t])
                         self.takes.append(t)
             else:
                 for idx, t in enumerate(_takes):
                     if idx == t_ind1 or idx == t_ind2:
+                        self.ignore_index.append(cfg.ignore_index[t])
                         self.takes.append(t)
         # iterator specific
         self.sample_count = None
