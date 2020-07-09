@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', nargs='*', default='model_01')
 parser.add_argument('--max-iter', type=int, default=4000)
 parser.add_argument('--surgery-out', action='store_true')
-
+args = parser.parse_args()
 models = args.cfg
 
 if args.surgery_out:
