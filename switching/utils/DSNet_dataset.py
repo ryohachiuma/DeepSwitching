@@ -6,7 +6,7 @@ import pickle
 import cv2
 
 from itertools import permutations 
-
+from itertools import combinations
 class Dataset:
 
     def __init__(self, cfg, mode, fr_num, camera_num, batch_size, split, iter_method='sample', frame_size=(224, 224, 3), split_ratio=0.8, shuffle=False, overlap=0, num_sample=20000, sub_sample=5, setting_id=0):
@@ -40,7 +40,8 @@ class Dataset:
                 self.takes = self.cfg.takes[mode]
         elif self.split == 'surgery':
             _takes = self.cfg.takes['train']
-            perm = list(permutations(range(len(_takes)), 2))
+            perm = list(combinations(range(len(_takes)), 2))
+            #print(perm)
             t_ind1, t_ind2 = perm[setting_id]
             self.takes = []
             if mode == 'train':
@@ -149,6 +150,7 @@ class Dataset:
 
 
             img = self.load_imgs(take_ind, fr_start, fr_end)
+            #print(img.shape)
             label = self.convert_label(take_ind, fr_start, fr_end)
             switch_label = self.convert_label_switch(take_ind, fr_start, fr_end)
             imgs.append(img)
@@ -215,11 +217,11 @@ class Dataset:
             img_file = os.path.join(take_folder,'%06d.npz' % (img_ind))
             imgs = np.load(img_file, allow_pickle=True)['imgs']
             imgs = np.rollaxis(imgs, 3, 1)
-            if self.mode != 'train' or True:
-                imgs = np.rollaxis(imgs, 3, 1)
+            #if self.mode != 'train' or True:
+            #    imgs = np.rollaxis(imgs, 3, 1)
             imgs_all.append(imgs)
-        if self.mode == 'train' and False:
-            imgs_all = self.augment(imgs_all)
+        #if self.mode == 'train' and False:
+        #    imgs_all = self.augment(imgs_all)
         imgs_all = np.asarray(imgs_all)
         imgs_all = np.rollaxis(imgs_all, 0, 2)
 

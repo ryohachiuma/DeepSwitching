@@ -11,7 +11,7 @@ save_model_interval: 100
 num_sample: 50000
 sub_sample: 5
 fr_margin: 3
-batch_size: 2
+batch_size: 1
 bi_dir: true
 loss: 'focal'
 iter_method: 'sample'

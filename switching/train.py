@@ -25,6 +25,7 @@ parser.add_argument('--mode', default='train')
 parser.add_argument('--data', default='train')
 parser.add_argument('--gpu-index', type=int, default=0)
 parser.add_argument('--iter', type=int, default=0)
+parser.add_argument('--max-iter', type=int, default=4000)
 parser.add_argument('--setting', type=int, default=0) # Applied only for sequence-out setting
 
 args = parser.parse_args()
@@ -68,7 +69,7 @@ fr_margin = cfg.fr_margin
 
 
 logger_str = {'train': "Training: ", 'val': "Validation: "}
-_iter = {'train': 0, 'val': 0}
+_iter = {'train': args.iter, 'val': 0}
 if cfg.network == 'DSNet_AR_Cont':
     loss_log = {'train': ['cat_loss','cont_loss', 'acc'], 'val': ['val_cat_loss','val_cont_loss', 'val_acc']}
 else:
@@ -134,7 +135,7 @@ def run_epoch(dataset, mode='train'):
                             .format(_iter[mode], time.time() - t0, loss, acc))
         _iter[mode]+=1
         
-        if _iter['train'] == 6000:
+        if _iter['train'] == args.max_iter:
             exit(0)
 
         """clean up gpu memory"""
@@ -162,6 +163,9 @@ elif args.mode == 'test':
     to_test(dsnet)
     dataset = Dataset(cfg, 'test', cfg.fr_num,  cfg.camera_num, 1, cfg.split, iter_method='iter', overlap=2*cfg.fr_margin, sub_sample=cfg.sub_sample, setting_id=args.setting)
     print(dataset.takes)
+    res_path = '%s/iter_%04d_%s.p' % (cfg.result_dir, args.iter, args.data)
+    if os.path.exists(res_path):
+        exit(0)
     torch.set_grad_enabled(False)
     res_pred_raw = {}
     res_pred = {}
@@ -173,31 +177,38 @@ elif args.mode == 'test':
     meta_start_arr = []
     take = dataset.takes[0]
     for imgs_np, labels_np, _ in dataset:
-        print(take)
+        #print(take)
         if not take in take_:
             take_[take] = dataset.fr_lb + fr_margin
-        imgs = tensor(imgs_np, dtype=dtype, device=device)
+        imgs = tensor(imgs_np, dtype=dtype, device=device).contiguous()
         prob_pred = dsnet(imgs)
         prob_pred = F.softmax(prob_pred[:, :, fr_margin: -fr_margin, :], dim=-1).cpu().numpy()
         select_prob = np.squeeze(prob_pred[:, :, :, 1])
         
         select_ind = np.argmax(select_prob, axis=0) # along camera direction
-        res_pred_raw_arr.append(select_prob.transpose())
+        #res_pred_raw_arr.append(select_prob.transpose())
+        print(select_ind.shape)
         res_pred_arr.append(select_ind)
 
         select_ind_gt = np.argmax(np.squeeze(labels_np[:, :, fr_margin:-fr_margin]), axis=0)
-        print(select_ind_gt.shape)
+        #print(select_ind)
+        #print(select_ind_gt)
         res_orig_arr.append(select_ind_gt)
 
         if dataset.cur_ind >= len(dataset.takes) or dataset.takes[dataset.cur_tid] != take:
-            res_pred_raw[take] = np.concatenate(res_pred_raw_arr)
-            res_pred[take] = np.concatenate(res_pred_arr)
-            res_orig[take] = np.concatenate(res_orig_arr)
+            #res_pred_raw[take] = np.concatenate(res_pred_raw_arr)
+            if type(select_ind) == np.int64:
+                res_pred[take] = np.concatenate(res_pred_arr[:-1])
+                res_orig[take] = np.concatenate(res_orig_arr[:-1])
+            else:
+                res_pred[take] = np.concatenate(res_pred_arr)
+                res_orig[take] = np.concatenate(res_orig_arr)
             res_pred_raw_arr, res_pred_arr, res_orig_arr = [], [], []
             take = dataset.takes[dataset.cur_tid]
             take_[take] = dataset.fr_lb + fr_margin
 
-    results = {'raw_prob': res_pred_raw, 'select_pred': res_pred, 'select_orig': res_orig, 'start_ind': take_}
+    #results = {'raw_prob': res_pred_raw, 'select_pred': res_pred, 'select_orig': res_orig, 'start_ind': take_}
+    results = {'select_pred':res_pred, 'select_orig':res_orig, 'start_ind':take_}
     res_path = '%s/iter_%04d_%s.p' % (cfg.result_dir, args.iter, args.data)
     pickle.dump(results, open(res_path, 'wb'))
     logger.info('saved results to %s' % res_path)

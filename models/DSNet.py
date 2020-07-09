@@ -186,6 +186,7 @@ class DSNetv2(nn.Module):
     def forward(self, inputs):
         fr_num = inputs.size()[2]
         #batch x cameraNum, framenum, cnn_fdim
+        #print(inputs.size())
         local_feat = self.cnn(inputs.view((-1,) + self.frame_shape)).view((-1, fr_num, self.cnn_fdim))
         #batch, cameraNum, framenum, cnn_fdim
         local_feat = local_feat.contiguous().view(-1, self.camera_num, fr_num, self.cnn_fdim)
@@ -258,7 +259,7 @@ class DSNet_AR(nn.Module):
             ar_features = self.mlp(ar_features)
             #batch, cameraNum, 2
             pred = self.linear(ar_features)
-            if initial_sampling.sample() and self.training:
+            if initial_sampling.sample() and self.training and False:
                 prev_pred = gt_label[:, :, fr, :].view(-1, 2).type(self.dtype)
             else:
                 prev_pred = self.softmax(pred.clone())
