@@ -2,9 +2,25 @@ import os
 import numpy as np
 import itertools
 import subprocess
-models = ['model_focal', 'baseline_seq', 'baseline_spac', 'baseline']
 
-_range = np.arange(3000, 4000, 500)
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--cfg', nargs='*', default='model_01')
+parser.add_argument('--min-iter', type=int, default=3000)
+parser.add_argument('--max-iter', type=int, default=4000)
+parser.add_argument('--surgery-out', action='store_true')
+
+models = args.cfg
+
+if args.surgery_out:
+    set_num = 14
+else:
+    set_num = 5
+
+models = args.cfg
+
+_range = np.arange(args.min_iter, args.max_iter, 500)
 
 setting = range(5)
 

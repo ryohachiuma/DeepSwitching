@@ -181,22 +181,23 @@ elif args.mode == 'test':
         if not take in take_:
             take_[take] = dataset.fr_lb + fr_margin
         imgs = tensor(imgs_np, dtype=dtype, device=device).contiguous()
-        prob_pred = dsnet(imgs)
+        labels = tensor(labels_np, dtype=torch.long, device=device)
+        if cfg.network == 'DSNet_AR_Cont':
+            prob_pred, pred_features = dsnet(imgs, labels, 0)
+        elif cfg.network == 'dsar' or cfg.network == 'DSNet_ConvAR':
+            prob_pred = dsnet(imgs, labels, 0)
+        else:
+            prob_pred = dsnet(imgs)
         prob_pred = F.softmax(prob_pred[:, :, fr_margin: -fr_margin, :], dim=-1).cpu().numpy()
         select_prob = np.squeeze(prob_pred[:, :, :, 1])
         
         select_ind = np.argmax(select_prob, axis=0) # along camera direction
-        #res_pred_raw_arr.append(select_prob.transpose())
-        print(select_ind.shape)
         res_pred_arr.append(select_ind)
 
         select_ind_gt = np.argmax(np.squeeze(labels_np[:, :, fr_margin:-fr_margin]), axis=0)
-        #print(select_ind)
-        #print(select_ind_gt)
         res_orig_arr.append(select_ind_gt)
 
         if dataset.cur_ind >= len(dataset.takes) or dataset.takes[dataset.cur_tid] != take:
-            #res_pred_raw[take] = np.concatenate(res_pred_raw_arr)
             if type(select_ind) == np.int64:
                 res_pred[take] = np.concatenate(res_pred_arr[:-1])
                 res_orig[take] = np.concatenate(res_orig_arr[:-1])

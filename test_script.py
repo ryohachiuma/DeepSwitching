@@ -19,10 +19,4 @@ for i in range(len(args)):
     cmd = 'python switching/train.py --mode test --data test --cfg ' + args[i][0] + ' --iter ' + str(args[i][1]) + ' --setting ' + str(args[i][2]) + ' --gpu-index ' + str(gpu_id)
     print(cmd)
     os.system(cmd)
-    '''
-    if gpu_id != 6:
-        subprocess.Popen(cmd, shell=True)
-    else:
-        os.system(cmd)
-    '''
 
