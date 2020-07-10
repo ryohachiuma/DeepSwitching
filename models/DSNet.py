@@ -228,7 +228,7 @@ class DSNet_AR(nn.Module):
         self.mlp = MLP(v_hdim + 2, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
-        self.scheduled_k = 0.998
+        self.scheduled_k = 0.997
 
 
     def forward(self, inputs, gt_label, _iter):
@@ -260,7 +260,7 @@ class DSNet_AR(nn.Module):
             ar_features = self.mlp(ar_features)
             #batch, cameraNum, 2
             pred = self.linear(ar_features)
-            if initial_sampling.sample() and self.training or True:
+            if initial_sampling.sample() and self.training:
                 prev_pred = gt_label[:, :, fr, :].view(-1, 2).type(self.dtype)
             else:
                 prev_pred = self.softmax(pred.clone())
