@@ -224,7 +224,8 @@ class DSNet_AR(nn.Module):
         self.v_net_type = v_net_type
         #self.v_net = RNN(cnn_fdim * 2, v_hdim, bi_dir=bi_dir)
         self.v_net = nn.LSTM(cnn_fdim * 2, v_hdim // 2, batch_first=True, bidirectional=bi_dir)
-        self.mlp = ResidualMLP(v_hdim + 2, mlp_dim, 'leaky', is_dropout=is_dropout)
+        #self.mlp = ResidualMLP(v_hdim + 2, mlp_dim, 'leaky', is_dropout=is_dropout)
+        self.mlp = MLP(v_hdim + 2, mlp_dim, 'leaky', is_dropout=is_dropout)
         self.linear = nn.Linear(self.mlp.out_dim, out_dim)
         self.softmax = nn.Softmax(dim=1)
         self.scheduled_k = 0.998
@@ -259,7 +260,7 @@ class DSNet_AR(nn.Module):
             ar_features = self.mlp(ar_features)
             #batch, cameraNum, 2
             pred = self.linear(ar_features)
-            if initial_sampling.sample() and self.training and False:
+            if initial_sampling.sample() and self.training or True:
                 prev_pred = gt_label[:, :, fr, :].view(-1, 2).type(self.dtype)
             else:
                 prev_pred = self.softmax(pred.clone())
